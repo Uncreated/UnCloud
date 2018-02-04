@@ -1,5 +1,7 @@
 package com.uncreated.uncloud.Server.storage;
 
+import java.io.File;
+
 public class FileInfo
 {
 	String path;
@@ -23,5 +25,10 @@ public class FileInfo
 	public Long getSize()
 	{
 		return size;
+	}
+
+	public String getName()
+	{
+		return (new File(path)).getName();
 	}
 }

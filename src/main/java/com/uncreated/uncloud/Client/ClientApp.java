@@ -1,12 +1,6 @@
 package com.uncreated.uncloud.Client;
 
-import com.uncreated.uncloud.Server.RequestException;
-import com.uncreated.uncloud.Server.storage.FileInfo;
-import com.uncreated.uncloud.Server.storage.FileTransfer;
-import com.uncreated.uncloud.Server.storage.UserFiles;
 import javafx.application.Application;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -18,214 +12,186 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.util.ArrayList;
 
-import static com.uncreated.uncloud.Common.PART_SIZE;
-
-public class ClientApp extends Application
+public class ClientApp extends Application implements ClientView
 {
-	ClientController clientController = new ClientController();
+	private ClientController clientController;
 
-	VBox buttonsPane;
-	FlowPane filesPane;
+	private VBox buttonsPane;
+	private BorderPane rightPane;
 
-	Stage stage;
-	FileInfo selectedFile;
+	private Stage stage;
+	private Button getFileButton;
+	private Button removeFileButton;
 
 	public static void main(String[] args)
 	{
 		launch(ClientApp.class, args);
-		/*ClientController controller = new ClientController();
+	}
 
-		try
+	public ClientApp()
+	{
+		clientController = new ClientController(this);
+	}
+
+	private void news(boolean good, String message)
+	{
+		Alert alert = new Alert(good ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, message, ButtonType.OK);
+		alert.setTitle("123");
+		alert.showAndWait();
+	}
+
+	@Override
+	public void onRegister(RequestStatus requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			news(true, "You have successfully registered");
+	}
+
+	@Override
+	public void onAuth(RequestStatus requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			stageFiles();
+	}
+
+	@Override
+	public void onUserFiles(RequestStatus requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			clientController.fileClick("/");
+	}
+
+	@Override
+	public void onFolderOpen(ArrayList<String> files, boolean rootFolder)
+	{
+		FlowPane filesPane = new FlowPane();
+
+		filesPane.setPadding(new Insets(10, 0, 10, 10));
+		filesPane.setHgap(10);
+		filesPane.setVgap(10);
+		if (!rootFolder)
 		{
-			controller.register("masha", "siski");
-		} catch (RequestException e)
-		{
-			e.printStackTrace();
+			Button button = new Button("<- Back");
+			button.setPrefHeight(100);
+			button.setPrefWidth(100);
+			button.setOnMouseClicked(event ->
+			{
+				clientController.goBack();
+			});
+			filesPane.getChildren().add(button);
 		}
-
-		try
+		for (String name : files)
 		{
-			Session session = controller.auth("masha", "siski");
+			Button button = new Button(name);
+			button.setPrefHeight(100);
+			button.setPrefWidth(100);
+			button.setOnMouseClicked(event ->
+			{
+				clientController.fileClick(name);
+			});
+			filesPane.getChildren().add(button);
+		}
+		rightPane.getChildren().clear();
+		rightPane.setCenter(filesPane);
+	}
 
-			try
-			{
-				UserFiles userFiles = controller.files();
-				FileInfo[] files =  userFiles.getFiles();
-				FileInfo fileInfo = files[0];
-				try
-				{
-					FileTransfer fileTransfer = controller.getFile(fileInfo.getPath(), 0);
-					try
-					{
-						controller.removeFile(fileInfo.getPath());
-						try
-						{
-							controller.setFile(fileTransfer);
-						} catch (RequestException e)
-						{
-							e.printStackTrace();
-						}
-					} catch (RequestException e)
-					{
-						e.printStackTrace();
-					}
-				} catch (RequestException e)
-				{
-					e.printStackTrace();
-				}
-			} catch (RequestException e)
-			{
-				e.printStackTrace();
-			}
-		} catch (RequestException e)
-		{
-			e.printStackTrace();
-		}*/
+	@Override
+	public void onGetFileResponse(RequestStatus requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			news(true, "File downloaded");
+	}
+
+	@Override
+	public void onSetFileResponse(RequestStatus requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			news(true, "File uploaded to server");
+	}
+
+	@Override
+	public void onRemoveFileResponse(RequestStatus requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			news(true, "File was deleted from server");
+	}
+
+	@Override
+	public void onFileSelected()
+	{
+		getFileButton.setDisable(false);
+		removeFileButton.setDisable(false);
+	}
+
+	@Override
+	public void onFileUnselected()
+	{
+		getFileButton.setDisable(true);
+		removeFileButton.setDisable(true);
 	}
 
 	private void stageFiles()
 	{
-		UserFiles userFiles;
-		try
-		{
-			userFiles = clientController.files();
-		} catch (RequestException e)
-		{
-			Alert alert = new Alert(Alert.AlertType.ERROR, "Could not load file list", ButtonType.OK);
-			alert.showAndWait();
-			return;
-		}
-
-		Button button;
-
 		BorderPane root = new BorderPane();
 
 		VBox leftPane = new VBox();
-		ScrollPane rightPane = new ScrollPane();
-		rightPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		ScrollPane scrollPane = new ScrollPane();
+		scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+		rightPane = new BorderPane();
+		ProgressIndicator progressIndicator = new ProgressIndicator();
+		rightPane.setCenter(progressIndicator);
+
+		scrollPane.setContent(rightPane);
 
 		root.setLeft(leftPane);
-		root.setCenter(rightPane);
+		root.setCenter(scrollPane);
 
 		//buttons
 		leftPane.setPadding(new Insets(10));
 		leftPane.setSpacing(10);
-		button = new Button("Add File");
-		button.setPrefWidth(100);
-		button.setPrefHeight(100);
-		leftPane.getChildren().add(button);
+		Button addFileButton = new Button("Add File");
+		addFileButton.setPrefWidth(100);
+		addFileButton.setPrefHeight(100);
+		leftPane.getChildren().add(addFileButton);
 
-		button = new Button("Get File");
-		button.setPrefWidth(100);
-		button.setPrefHeight(100);
-		leftPane.getChildren().add(button);
-		button.setOnAction(new EventHandler<ActionEvent>()
+		getFileButton = new Button("Get File");
+		getFileButton.setPrefWidth(100);
+		getFileButton.setPrefHeight(100);
+		leftPane.getChildren().add(getFileButton);
+		getFileButton.setOnAction(event ->
 		{
-			@Override
-			public void handle(ActionEvent event)
-			{
-				if (selectedFile != null)
-				{
-					Alert alert = new Alert(Alert.AlertType.ERROR,
-							"File was not saved",
-							ButtonType.OK);
-					try
-					{
-						FileTransfer fileTransfer = clientController.getFile(selectedFile.getPath(), 0);
-						File file = new File("C:/localFiles"+fileTransfer.getPath());
-						file.getParentFile().mkdirs();
-						if (!file.exists())
-							file.createNewFile();
-
-						int size = fileTransfer.getData().length;
-
-						if (size > 0)
-						{
-							long shift = PART_SIZE * fileTransfer.getPart();
-							if (size > PART_SIZE)
-								size = PART_SIZE;
-
-							FileOutputStream outputStream = new FileOutputStream( file);
-							outputStream.write(fileTransfer.getData(), (int) shift, size);
-							outputStream.close();
-						}
-						alert = new Alert(Alert.AlertType.INFORMATION,
-								"File was successfully saved",
-								ButtonType.OK);
-					} catch (RequestException | IOException e)
-					{
-						e.printStackTrace();
-					}
-					alert.showAndWait();
-				}
-			}
+			clientController.writeFile();
 		});
 
-		button = new Button("Remove File");
-		button.setPrefWidth(100);
-		button.setPrefHeight(100);
-		leftPane.getChildren().
+		removeFileButton = new Button("Remove File");
+		removeFileButton.setPrefWidth(100);
+		removeFileButton.setPrefHeight(100);
+		leftPane.getChildren().add(removeFileButton);
 
-				add(button);
-
-		button.setOnAction(new EventHandler<ActionEvent>()
-
+		removeFileButton.setOnAction(event ->
 		{
-			@Override
-			public void handle(ActionEvent event)
-			{
-				if (selectedFile != null)
-				{
-					try
-					{
-						clientController.removeFile(selectedFile.getPath());
-						selectedFile = null;
-						stageFiles();
-					} catch (RequestException e)
-					{
-						e.printStackTrace();
-					}
-				}
-			}
+			clientController.removeFile();
 		});
 
-		//Files
-		FlowPane filesPane = new FlowPane();
+		onFileUnselected();
+		stage.getScene().setRoot(root);
 
-		filesPane.setPadding(new
-
-				Insets(10, 0, 10, 10));
-		filesPane.setHgap(10);
-		filesPane.setVgap(10);
-		for (
-				FileInfo fileInfo : userFiles.getFiles())
-
-		{
-			button = new Button(fileInfo.getPath() + "\n" + fileInfo.getSize() + "b");
-			button.setPrefWidth(100);
-			button.setPrefHeight(100);
-			filesPane.getChildren().add(button);
-			button.setOnAction(new EventHandler<ActionEvent>()
-			{
-				@Override
-				public void handle(ActionEvent event)
-				{
-					selectedFile = fileInfo;
-				}
-			});
-		}
-
-		BorderPane borderPane = new BorderPane();
-		borderPane.setCenter(filesPane);
-		rightPane.setContent(borderPane);
-
-		stage.getScene().
-
-				setRoot(root);
+		clientController.userFiles();
 	}
 
 	private void stageAuth(Stage primaryStage) throws Exception
@@ -251,56 +217,14 @@ public class ClientApp extends Application
 		BorderPane root = new BorderPane();
 		root.setCenter(vBox);
 
-		registerButton.setOnAction(new EventHandler<ActionEvent>()
+		registerButton.setOnAction(event ->
 		{
-			@Override
-			public void handle(ActionEvent event)
-			{
-				String login = loginTextField.getText();
-				String password = passwordTextField.getText();
-				Alert alert = new Alert(Alert.AlertType.WARNING,
-						"Incorrect login or password",
-						ButtonType.OK);
-				if (login.length() > 0 && password.length() > 0)
-				{
-					try
-					{
-						clientController.register(login, password);
-						alert = new Alert(Alert.AlertType.INFORMATION,
-								"You have successfully registered",
-								ButtonType.OK);
-					} catch (RequestException e)
-					{
-						alert.showAndWait();
-					}
-				}
-				alert.showAndWait();
-			}
+			onAuthClick(loginTextField, passwordTextField, false);
 		});
 
-		authButton.setOnAction(new EventHandler<ActionEvent>()
+		authButton.setOnAction(event ->
 		{
-			@Override
-			public void handle(ActionEvent event)
-			{
-				String login = loginTextField.getText();
-				String password = passwordTextField.getText();
-				Alert alert = new Alert(Alert.AlertType.WARNING,
-						"Incorrect login or password",
-						ButtonType.OK);
-				if (login.length() > 0 && password.length() > 0)
-				{
-					try
-					{
-						clientController.auth(login, password);
-						stageFiles();
-					} catch (RequestException e)
-					{
-						alert.showAndWait();
-					}
-				} else
-					alert.showAndWait();
-			}
+			onAuthClick(loginTextField, passwordTextField, true);
 		});
 
 		stage.setScene(new Scene(root, 1, 1));
@@ -308,6 +232,20 @@ public class ClientApp extends Application
 		stage.setMinWidth(960);
 		stage.centerOnScreen();
 		stage.show();
+	}
+
+	private void onAuthClick(TextField loginTextField, TextField passwordTextField, boolean auth)
+	{
+		String login = loginTextField.getText();
+		String password = passwordTextField.getText();
+		if (login.length() > 0 && password.length() > 0)
+		{
+			if (auth)
+				clientController.auth(login, password);
+			else
+				clientController.register(login, password);
+		} else
+			news(false, "Incorrect login or password");
 	}
 
 	@Override

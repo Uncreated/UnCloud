@@ -26,4 +26,29 @@ public class UserFiles implements Answer
 	{
 		return files;
 	}
+
+	public ArrayList<String> getFilesFromDirectory(String path)
+	{
+		ArrayList<String> names = new ArrayList<>();
+		for (FileInfo fileInfo : files)
+		{
+			if (fileInfo.path.length() > path.length() && fileInfo.path.startsWith(path))
+			{
+				String name = fileInfo.path.substring(path.length());
+				if (name.contains("/"))
+					name = name.substring(0, name.indexOf('/') + 1);
+				names.add(name);
+			}
+		}
+		return names;
+	}
+
+	public FileInfo getFileInfo(String path)
+	{
+		for (FileInfo fileInfo : files)
+			if (fileInfo.path.equals(path))
+				return fileInfo;
+
+		return null;
+	}
 }

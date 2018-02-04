@@ -3,7 +3,9 @@ package com.uncreated.uncloud.Server.storage;
 import com.uncreated.uncloud.Server.RequestException;
 import org.springframework.http.HttpStatus;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import static com.uncreated.uncloud.Common.PART_SIZE;
@@ -56,11 +58,8 @@ public class StorageService
 			if (size > PART_SIZE)
 				size = PART_SIZE;
 
-			FileInputStream inputStream = new FileInputStream(file);
 			FileTransfer fileTransfer = new FileTransfer(filePath, part, size);
-			inputStream.skip(shift);
-			inputStream.read(fileTransfer.getData(), 0, size);
-			inputStream.close();
+			fileTransfer.read(ROOT_FOLDER + login);
 
 			return fileTransfer;
 
@@ -92,18 +91,7 @@ public class StorageService
 			if (!file.exists())
 				file.createNewFile();
 
-			int size = fileTransfer.data.length;
-
-			if (size > 0)
-			{
-				long shift = PART_SIZE * fileTransfer.part;
-				if (size > PART_SIZE)
-					size = PART_SIZE;
-
-				FileOutputStream outputStream = new FileOutputStream(file);
-				outputStream.write(fileTransfer.data, (int) shift, size);
-				outputStream.close();
-			}
+			fileTransfer.write(ROOT_FOLDER + login);
 
 		} catch (IOException e)
 		{
