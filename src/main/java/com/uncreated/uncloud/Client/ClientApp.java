@@ -1,17 +1,24 @@
 package com.uncreated.uncloud.Client;
 
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 public class ClientApp extends Application implements ClientView
@@ -22,8 +29,16 @@ public class ClientApp extends Application implements ClientView
 	private BorderPane rightPane;
 
 	private Stage stage;
-	private Button getFileButton;
-	private Button removeFileButton;
+	private ToggleButton getFileButton;
+	private ToggleButton deleteFileButton;
+
+	private String path;
+
+	private Image imageAddFile;
+	private Image imageGetFile;
+	private Image imageDeleteFile;
+	private Image imageFile;
+	private Image imageFolder;
 
 	public static void main(String[] args)
 	{
@@ -39,7 +54,7 @@ public class ClientApp extends Application implements ClientView
 	{
 		Alert alert = new Alert(good ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, message, ButtonType.OK);
 		alert.setTitle("123");
-		alert.showAndWait();
+		alert.show();
 	}
 
 	@Override
@@ -69,34 +84,45 @@ public class ClientApp extends Application implements ClientView
 			clientController.fileClick("/");
 	}
 
+	private ToggleButton customButton(String title, Image image)
+	{
+		ToggleButton button = new ToggleButton(title);
+		button.setPrefHeight(100);
+		//button.setPrefWidth(500);
+		button.setStyle("-fx-font: 22 arial; -fx-background-color: transparent;");
+		ImageView imageView = new ImageView();
+		button.setGraphic(imageView);
+		imageView.imageProperty()
+				.bind(Bindings.when(button.selectedProperty()).then(image).otherwise(image));
+
+		return button;
+	}
+
 	@Override
 	public void onFolderOpen(ArrayList<String> files, boolean rootFolder)
 	{
-		FlowPane filesPane = new FlowPane();
+		VBox filesPane = new VBox();
 
 		filesPane.setPadding(new Insets(10, 0, 10, 10));
-		filesPane.setHgap(10);
-		filesPane.setVgap(10);
+		filesPane.setSpacing(10);
 		if (!rootFolder)
 		{
-			Button button = new Button("<- Back");
-			button.setPrefHeight(100);
-			button.setPrefWidth(100);
-			button.setOnMouseClicked(event ->
+			ToggleButton backButton = customButton("../", imageFolder);
+			backButton.setOnMouseClicked(event ->
 			{
 				clientController.goBack();
 			});
-			filesPane.getChildren().add(button);
+			filesPane.setAlignment(Pos.CENTER_LEFT);
+			filesPane.getChildren().add(backButton);
 		}
 		for (String name : files)
 		{
-			Button button = new Button(name);
-			button.setPrefHeight(100);
-			button.setPrefWidth(100);
+			ToggleButton button = customButton(name, name.endsWith("/") ? imageFolder : imageFile);
 			button.setOnMouseClicked(event ->
 			{
 				clientController.fileClick(name);
 			});
+			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
 		}
 		rightPane.getChildren().clear();
@@ -126,22 +152,20 @@ public class ClientApp extends Application implements ClientView
 	{
 		if (!requestStatus.isOk())
 			news(false, requestStatus.getMsg());
-		else
-			news(true, "File was deleted from server");
 	}
 
 	@Override
 	public void onFileSelected()
 	{
 		getFileButton.setDisable(false);
-		removeFileButton.setDisable(false);
+		deleteFileButton.setDisable(false);
 	}
 
 	@Override
 	public void onFileUnselected()
 	{
 		getFileButton.setDisable(true);
-		removeFileButton.setDisable(true);
+		deleteFileButton.setDisable(true);
 	}
 
 	private void stageFiles()
@@ -164,26 +188,27 @@ public class ClientApp extends Application implements ClientView
 		//buttons
 		leftPane.setPadding(new Insets(10));
 		leftPane.setSpacing(10);
-		Button addFileButton = new Button("Add File");
-		addFileButton.setPrefWidth(100);
-		addFileButton.setPrefHeight(100);
+		ToggleButton addFileButton = customButton(null, imageAddFile);
 		leftPane.getChildren().add(addFileButton);
+		addFileButton.setOnAction(event ->
+		{
+			FileChooser fileChooser = new FileChooser();
+			fileChooser.setTitle("Select file for upload to server");
+			File file = fileChooser.showOpenDialog(stage);
+			clientController.setFile(file);
+		});
 
-		getFileButton = new Button("Get File");
-		getFileButton.setPrefWidth(100);
-		getFileButton.setPrefHeight(100);
+		getFileButton = customButton(null, imageGetFile);
 		leftPane.getChildren().add(getFileButton);
 		getFileButton.setOnAction(event ->
 		{
 			clientController.writeFile();
 		});
 
-		removeFileButton = new Button("Remove File");
-		removeFileButton.setPrefWidth(100);
-		removeFileButton.setPrefHeight(100);
-		leftPane.getChildren().add(removeFileButton);
+		deleteFileButton = customButton(null, imageDeleteFile);
+		leftPane.getChildren().add(deleteFileButton);
 
-		removeFileButton.setOnAction(event ->
+		deleteFileButton.setOnAction(event ->
 		{
 			clientController.removeFile();
 		});
@@ -252,5 +277,27 @@ public class ClientApp extends Application implements ClientView
 	public void start(Stage primaryStage) throws Exception
 	{
 		stageAuth(primaryStage);
+
+		imageFolder = loadImage("C:/UnCloud/folderIcon.png");
+		imageFile = loadImage("C:/UnCloud/fileIcon.png");
+		imageAddFile = loadImage("C:/UnCloud/addFileIcon.png");
+		imageGetFile = loadImage("C:/UnCloud/getFileIcon.png");
+		imageDeleteFile = loadImage("C:/UnCloud/deleteFileIcon.png");
+	}
+
+	private Image loadImage(String fileName)
+	{
+		try
+		{
+			File file = new File(fileName);
+			return new Image(new FileInputStream(file));
+		} catch (FileNotFoundException e)
+		{
+			e.printStackTrace();
+		}
+		news(false, "Can not to read interface components");
+
+		Platform.exit();
+		return null;
 	}
 }

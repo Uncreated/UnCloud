@@ -91,7 +91,7 @@ public class StorageService
 			if (!file.exists())
 				file.createNewFile();
 
-			fileTransfer.write(ROOT_FOLDER + login);
+			fileTransfer.write(file);
 
 		} catch (IOException e)
 		{

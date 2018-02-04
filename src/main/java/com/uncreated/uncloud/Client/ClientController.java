@@ -13,13 +13,13 @@ public class ClientController
 {
 	private static final String ROOT_FOLDER = "C:/localFiles";
 
-	RequestHandler requestHandler;
-	ClientView clientView;
+	private RequestHandler requestHandler;
+	private ClientView clientView;
 
-	UserFiles userFiles;
-	String path = "/";
-	ArrayList<String> curFiles;
-	String selectedFile;
+	private UserFiles userFiles;
+	private String path = "/";
+	private ArrayList<String> curFiles;
+	private String selectedFile;
 
 	public ClientController(ClientView clientView)
 	{
@@ -72,7 +72,7 @@ public class ClientController
 		});
 	}
 
-	private RequestStatus saveFile(FileInfo fileInfo)
+	private RequestStatus writeFile(FileInfo fileInfo)
 	{
 		RequestStatus requestStatus = null;
 		int szi = FileTransfer.getParts(fileInfo.getSize());
@@ -106,7 +106,7 @@ public class ClientController
 			{
 				FileInfo fileInfo = userFiles.getFileInfo(path + selectedFile);
 				if (fileInfo != null)
-					requestStatus = saveFile(fileInfo);
+					requestStatus = writeFile(fileInfo);
 				else
 					requestStatus = new RequestStatus(false, "File not found");
 			} else
@@ -118,16 +118,19 @@ public class ClientController
 		});
 	}
 
-	private RequestStatus readFile(FileInfo fileInfo)
+	private RequestStatus readFile(File file)
 	{
 		RequestStatus requestStatus = null;
+
+		FileInfo fileInfo = new FileInfo(path + file.getName(), file.length());
 		int szi = FileTransfer.getParts(fileInfo.getSize());
+		int n = 5;
 		for (int i = 0; i < szi; i++)
 		{
 			FileTransfer fileTransfer = new FileTransfer(fileInfo.getPath(), i, FileTransfer.getSizeOfPart(fileInfo.getSize(), i));
 			try
 			{
-				fileTransfer.read(ROOT_FOLDER);
+				fileTransfer.read(file);
 			} catch (IOException e)
 			{
 				requestStatus = new RequestStatus(false, "Can not read file");
@@ -135,6 +138,8 @@ public class ClientController
 			}
 			RequestStatus responseStatus = requestHandler.setFile(fileTransfer);
 			if (!responseStatus.isOk())
+				n--;
+			if (n < 0)
 			{
 				requestStatus = new RequestStatus(false, "File upload has been interrupted");
 				break;
@@ -143,18 +148,14 @@ public class ClientController
 		return requestStatus != null ? requestStatus : new RequestStatus(true);
 	}
 
-	public void setFile(String name)
+	public void setFile(File file)
 	{
 		runThread(() ->
 		{
 			RequestStatus requestStatus;
-			FileInfo fileInfo = userFiles.getFileInfo(path + name);
-			if (fileInfo != null)
+			if (file.exists())
 			{
-				if (requestHandler.removeFile(fileInfo.getPath()).isOk())
-					requestStatus = readFile(fileInfo);
-				else
-					requestStatus = new RequestStatus(false, "Can not send file");
+				requestStatus = readFile(file);
 			} else
 				requestStatus = new RequestStatus(false, "File not found");
 			Platform.runLater(() ->
@@ -169,6 +170,7 @@ public class ClientController
 		runThread(() ->
 		{
 			RequestStatus requestStatus;
+			String name = selectedFile;
 			if (selectedFile != null)
 			{
 				FileInfo fileInfo = userFiles.getFileInfo(path + selectedFile);
@@ -176,6 +178,8 @@ public class ClientController
 				{
 					requestStatus = requestHandler.removeFile(fileInfo.getPath());
 					unselectFile();
+					curFiles.remove(name);
+					userFiles.remove(fileInfo);
 				} else
 					requestStatus = new RequestStatus(false, "File not found");
 			} else
@@ -183,13 +187,9 @@ public class ClientController
 			Platform.runLater(() ->
 			{
 				clientView.onRemoveFileResponse(requestStatus);
+				clientView.onFolderOpen(curFiles, path.equals("/"));
 			});
 		});
-	}
-
-	public ArrayList<String> getCurFiles()
-	{
-		return curFiles;
 	}
 
 	public void goBack()

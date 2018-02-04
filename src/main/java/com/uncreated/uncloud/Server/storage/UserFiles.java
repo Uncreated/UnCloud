@@ -3,6 +3,7 @@ package com.uncreated.uncloud.Server.storage;
 import com.uncreated.uncloud.Server.Answer;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class UserFiles implements Answer
 {
@@ -37,7 +38,8 @@ public class UserFiles implements Answer
 				String name = fileInfo.path.substring(path.length());
 				if (name.contains("/"))
 					name = name.substring(0, name.indexOf('/') + 1);
-				names.add(name);
+				if (!names.contains(name))
+					names.add(name);
 			}
 		}
 		return names;
@@ -50,5 +52,13 @@ public class UserFiles implements Answer
 				return fileInfo;
 
 		return null;
+	}
+
+	public void remove(FileInfo fileInfo)
+	{
+		ArrayList<FileInfo> list = new ArrayList<>(Arrays.asList(files));
+		list.remove(fileInfo);
+		files = new FileInfo[list.size()];
+		list.toArray(files);
 	}
 }

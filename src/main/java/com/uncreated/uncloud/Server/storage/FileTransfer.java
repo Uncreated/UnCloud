@@ -2,9 +2,7 @@ package com.uncreated.uncloud.Server.storage;
 
 import com.uncreated.uncloud.Server.Answer;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 public class FileTransfer implements Answer
 {
@@ -12,7 +10,6 @@ public class FileTransfer implements Answer
 
 	String path;
 	Integer part;
-	Integer parts;
 	byte[] data;
 
 	public FileTransfer()
@@ -21,24 +18,34 @@ public class FileTransfer implements Answer
 
 	public void read(String rootFolder) throws IOException
 	{
-		FileInputStream inputStream = new FileInputStream(rootFolder + path);
-		inputStream.skip(part * PART_SIZE);
-		inputStream.read(data, 0, data.length);
-		inputStream.close();
+		read(new File(rootFolder + path));
+	}
+
+	public void read(File file) throws IOException
+	{
+		RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
+		randomAccessFile.seek((long)part * (long)PART_SIZE);
+		randomAccessFile.read(data);
+		randomAccessFile.close();
 	}
 
 	public void write(String rootFolder) throws IOException
 	{
-		FileOutputStream outputStream = new FileOutputStream(rootFolder + path);
-		outputStream.write(data, part * PART_SIZE, data.length);
-		outputStream.close();
+		write(new File(rootFolder + path));
+	}
+
+	public void write(File file) throws IOException
+	{
+		RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
+		randomAccessFile.seek((long)part * (long)PART_SIZE);
+		randomAccessFile.write(data);
+		randomAccessFile.close();
 	}
 
 	public FileTransfer(String path, Integer part, int size)
 	{
 		this.path = path;
 		this.part = part;
-		this.parts = getParts(size);
 		this.data = new byte[size];
 	}
 
@@ -50,11 +57,6 @@ public class FileTransfer implements Answer
 	public Integer getPart()
 	{
 		return part;
-	}
-
-	public Integer getParts()
-	{
-		return parts;
 	}
 
 	public byte[] getData()
