@@ -6,9 +6,10 @@ import org.springframework.http.HttpStatus;
 import java.io.*;
 import java.util.ArrayList;
 
+import static com.uncreated.uncloud.Common.PART_SIZE;
+
 public class StorageService
 {
-	private static final int PART_SIZE = 10485760;//10mb
 	private static final String ROOT_FOLDER = "C:/UnCloud/";
 
 	public UserFiles getUserFiles(String login)
@@ -45,7 +46,7 @@ public class StorageService
 		{
 			File file = new File(ROOT_FOLDER + login + filePath);
 			if (!file.exists())
-				throw new RequestException("Incorrect filename");
+				throw new RequestException("Incorrect filename(" + filePath + ")");
 
 			long shift = PART_SIZE * part;
 			int size = (int) (file.length() - shift);
@@ -65,7 +66,7 @@ public class StorageService
 
 		} catch (FileNotFoundException e)
 		{
-			throw new RequestException("Incorrect filename");
+			throw new RequestException("Incorrect filename(" + filePath + ")");
 		} catch (IOException e)
 		{
 			throw new RequestException("Internal error", HttpStatus.INTERNAL_SERVER_ERROR);

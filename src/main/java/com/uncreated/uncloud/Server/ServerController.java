@@ -21,12 +21,12 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 
 @RestController
 @RequestMapping("/api")
-public class MainController
+public class ServerController
 {
 	private AuthService authService;
 	private StorageService storageService;
 
-	public MainController(UsersRepository usersRepository)
+	public ServerController(UsersRepository usersRepository)
 	{
 		authService = new AuthService(usersRepository);
 		storageService = new StorageService();

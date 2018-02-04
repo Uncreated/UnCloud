@@ -18,6 +18,8 @@ public class RequestException extends Exception
 		super(errorMsg);
 		this.httpCode = httpCode;
 		this.errorMsg = new ErrorMsg(errorMsg);
+
+		System.out.println("RequestException: CODE=" + httpCode + "\n" + errorMsg);
 	}
 
 	public ErrorMsg getErrorMsg()
