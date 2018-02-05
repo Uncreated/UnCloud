@@ -2,8 +2,8 @@ package com.uncreated.uncloud.Client.View;
 
 import com.uncreated.uncloud.Client.ClientController;
 import com.uncreated.uncloud.Client.RequestStatus;
-
-import java.util.ArrayList;
+import com.uncreated.uncloud.Server.storage.FileNode;
+import javafx.stage.Stage;
 
 public abstract class ViewStage implements ClientView
 {
@@ -13,6 +13,8 @@ public abstract class ViewStage implements ClientView
 	{
 		this.clientController = clientController;
 	}
+
+	public abstract void onStart(Stage stage);
 
 	@Override
 	public void onRegister(RequestStatus requestStatus)
@@ -33,37 +35,19 @@ public abstract class ViewStage implements ClientView
 	}
 
 	@Override
-	public void onGetFileResponse(RequestStatus requestStatus)
+	public void onGetFileResponse(RequestStatus<FileNode> requestStatus)
 	{
 
 	}
 
 	@Override
-	public void onSetFileResponse(RequestStatus requestStatus)
+	public void onSetFileResponse(RequestStatus<FileNode> requestStatus)
 	{
 
 	}
 
 	@Override
-	public void onRemoveFileResponse(RequestStatus requestStatus)
-	{
-
-	}
-
-	@Override
-	public void onFileSelected()
-	{
-
-	}
-
-	@Override
-	public void onFileUnselected()
-	{
-
-	}
-
-	@Override
-	public void onFolderOpen(ArrayList<String> files, boolean rootFolder)
+	public void onRemoveFileResponse(RequestStatus<FileNode> requestStatus)
 	{
 
 	}

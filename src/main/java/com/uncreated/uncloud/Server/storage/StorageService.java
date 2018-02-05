@@ -6,7 +6,6 @@ import org.springframework.http.HttpStatus;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.ArrayList;
 
 import static com.uncreated.uncloud.Common.PART_SIZE;
 
@@ -14,31 +13,18 @@ public class StorageService
 {
 	private static final String ROOT_FOLDER = "C:/UnCloud/";
 
-	public UserFiles getUserFiles(String login)
+	public FolderNode getUserFiles(String login) throws RequestException
 	{
-		File userFolder = new File(ROOT_FOLDER + login);
-		if (!userFolder.exists())
-			userFolder.mkdir();
-		ArrayList<FileInfo> files = new ArrayList<>();
-		findFiles(files, ROOT_FOLDER + login, "");
-
-		return new UserFiles(files);
-	}
-
-	private void findFiles(ArrayList<FileInfo> files, String root, String localPath)
-	{
-		File file = new File(root + localPath);
-		if (file.exists())
+		try
 		{
-			if (file.isDirectory())
-			{
-				File[] subFiles = file.listFiles();
-				for (File subFile : subFiles)
-					findFiles(files, root, localPath + "/" + subFile.getName());
-			} else
-			{
-				files.add(new FileInfo(localPath, file.length()));
-			}
+			File userFolder = new File(ROOT_FOLDER + login);
+			if (!userFolder.exists())
+				userFolder.mkdir();
+
+			return new FolderNode(userFolder);
+		} catch (FileNotFoundException e)
+		{
+			throw new RequestException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 	}
 

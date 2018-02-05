@@ -1,8 +1,7 @@
 package com.uncreated.uncloud.Client.View;
 
 import com.uncreated.uncloud.Client.RequestStatus;
-
-import java.util.ArrayList;
+import com.uncreated.uncloud.Server.storage.FileNode;
 
 public interface ClientView
 {
@@ -12,15 +11,9 @@ public interface ClientView
 
 	void onUserFiles(RequestStatus requestStatus);
 
-	void onGetFileResponse(RequestStatus requestStatus);
+	void onGetFileResponse(RequestStatus<FileNode> requestStatus);
 
-	void onSetFileResponse(RequestStatus requestStatus);
+	void onSetFileResponse(RequestStatus<FileNode> requestStatus);
 
-	void onRemoveFileResponse(RequestStatus requestStatus);
-
-	void onFileSelected();
-
-	void onFileUnselected();
-
-	void onFolderOpen(ArrayList<String> files, boolean rootFolder);
+	void onRemoveFileResponse(RequestStatus<FileNode> requestStatus);
 }

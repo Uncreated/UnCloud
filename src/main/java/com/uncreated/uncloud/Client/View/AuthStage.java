@@ -26,7 +26,8 @@ public class AuthStage extends ViewStage
 		super(clientController);
 	}
 
-	public void stageAuth(Stage stage) throws Exception
+	@Override
+	public void onStart(Stage stage)
 	{
 		Text loginText = new Text("Login:");
 		loginTextField = new TextField();

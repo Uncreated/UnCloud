@@ -3,8 +3,9 @@ package com.uncreated.uncloud.Client;
 import com.uncreated.uncloud.Server.RequestException;
 import com.uncreated.uncloud.Server.auth.Session;
 import com.uncreated.uncloud.Server.auth.User;
+import com.uncreated.uncloud.Server.storage.FileNode;
 import com.uncreated.uncloud.Server.storage.FileTransfer;
-import com.uncreated.uncloud.Server.storage.UserFiles;
+import com.uncreated.uncloud.Server.storage.FolderNode;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -19,10 +20,10 @@ import java.util.ArrayList;
 
 public class RequestHandler
 {
-	private static final String API_URL = "http://192.168.1.42:8080/api/";
+	private static final String API_URL = "http://localhost:8080/api/";
 	private static final RestTemplate restTemplate = new RestTemplate();
 
-	Session session;
+	private Session session;
 
 	public RequestStatus register(String login, String password)
 	{
@@ -53,28 +54,27 @@ public class RequestHandler
 
 	}
 
-	public RequestStatus<UserFiles> files()
+	public RequestStatus<FolderNode> files()
 	{
 		Request request = new Request("files", HttpMethod.GET);
 		try
 		{
-			UserFiles userFiles = request.go("", UserFiles.class);
-			return new RequestStatus<UserFiles>(true).setData(userFiles);
+			FolderNode folderNode = request.go("", FolderNode.class);
+			return new RequestStatus<FolderNode>(true).setData(folderNode);
 		} catch (RequestException e)
 		{
 			e.printStackTrace();
-			return new RequestStatus<UserFiles>(false, e.getMessage());
+			return new RequestStatus<FolderNode>(false, e.getMessage());
 		}
 	}
 
-	public RequestStatus<FileTransfer> getFile(String path, Integer part)
+	public RequestStatus<FileTransfer> getFile(FileNode fileNode, Integer part)
 	{
 		Request request = new Request("file", HttpMethod.GET);
-		request.add("path", path);
 		request.add("part", part.toString());
 		try
 		{
-			FileTransfer fileTransfer = request.go("", FileTransfer.class);
+			FileTransfer fileTransfer = request.go(fileNode, FileTransfer.class);
 			return new RequestStatus<FileTransfer>(true).setData(fileTransfer);
 		} catch (RequestException e)
 		{
@@ -83,18 +83,17 @@ public class RequestHandler
 		}
 	}
 
-	public RequestStatus removeFile(String path)
+	public RequestStatus<FileNode> removeFile(FileNode fileNode)
 	{
 		Request request = new Request("file", HttpMethod.DELETE);
-		request.add("path", path);
 		try
 		{
-			request.go("", String.class);
-			return new RequestStatus(true);
+			request.go(fileNode, String.class);
+			return new RequestStatus<>(true);
 		} catch (RequestException e)
 		{
 			e.printStackTrace();
-			return new RequestStatus(false, e.getMessage());
+			return new RequestStatus<>(false, e.getMessage());
 		}
 	}
 

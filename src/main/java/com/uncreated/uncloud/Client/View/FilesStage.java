@@ -1,6 +1,9 @@
 package com.uncreated.uncloud.Client.View;
 
 import com.uncreated.uncloud.Client.ClientController;
+import com.uncreated.uncloud.Client.RequestStatus;
+import com.uncreated.uncloud.Server.storage.FileNode;
+import com.uncreated.uncloud.Server.storage.FolderNode;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -18,7 +21,8 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.util.ArrayList;
+
+import static com.uncreated.uncloud.Client.View.ClientApp.news;
 
 public class FilesStage extends ViewStage
 {
@@ -32,6 +36,10 @@ public class FilesStage extends ViewStage
 	private Image imageDeleteFile;
 	private Image imageFile;
 	private Image imageFolder;
+
+	private FolderNode rootFolder;
+	private FileNode selectedFile;
+	private FolderNode curFolder;
 
 	public FilesStage(ClientController clientController)
 	{
@@ -48,7 +56,6 @@ public class FilesStage extends ViewStage
 	{
 		ToggleButton button = new ToggleButton(title);
 		button.setPrefHeight(100);
-		//button.setPrefWidth(500);
 		button.setStyle("-fx-font: 22 arial; -fx-background-color: transparent;");
 		ImageView imageView = new ImageView();
 		button.setGraphic(imageView);
@@ -58,43 +65,54 @@ public class FilesStage extends ViewStage
 		return button;
 	}
 
-	@Override
-	public void onFileSelected()
+	private void selectFile(FileNode fileNode)
 	{
-		getFileButton.setDisable(false);
-		deleteFileButton.setDisable(false);
+		selectedFile = fileNode;
+		getFileButton.setDisable(selectedFile == null);
+		deleteFileButton.setDisable(selectedFile == null);
 	}
 
 	@Override
-	public void onFileUnselected()
+	public void onUserFiles(RequestStatus requestStatus)
 	{
-		getFileButton.setDisable(true);
-		deleteFileButton.setDisable(true);
+		this.rootFolder = clientController.getRootFolder();
+		showFolder(rootFolder);
 	}
 
-	@Override
-	public void onFolderOpen(ArrayList<String> files, boolean rootFolder)
+	private void showFolder(FolderNode folderNode)
 	{
+		curFolder = folderNode;
+		selectFile(null);
 		VBox filesPane = new VBox();
 
 		filesPane.setPadding(new Insets(10, 0, 10, 10));
 		filesPane.setSpacing(10);
-		if (!rootFolder)
+		if (folderNode.getParentFolder() != null)
 		{
-			ToggleButton backButton = customButton("../", imageFolder);
+			ToggleButton backButton = customButton("../" + folderNode.getName(), imageFolder);
 			backButton.setOnMouseClicked(event ->
 			{
-				clientController.goBack();
+				showFolder(folderNode.getParentFolder());
 			});
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(backButton);
 		}
-		for (String name : files)
+		for (FolderNode folder : folderNode.getFolders())
 		{
-			ToggleButton button = customButton(name, name.endsWith("/") ? imageFolder : imageFile);
+			ToggleButton button = customButton(folder.getName(), imageFolder);
 			button.setOnMouseClicked(event ->
 			{
-				clientController.fileClick(name);
+				showFolder(folder);
+			});
+			filesPane.setAlignment(Pos.CENTER_LEFT);
+			filesPane.getChildren().add(button);
+		}
+		for (FileNode file : folderNode.getFiles())
+		{
+			ToggleButton button = customButton(file.getName(), imageFile);
+			button.setOnMouseClicked(event ->
+			{
+				selectFile(file);
 			});
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
@@ -103,8 +121,45 @@ public class FilesStage extends ViewStage
 		rightPane.setCenter(filesPane);
 	}
 
+	@Override
+	public void onGetFileResponse(RequestStatus<FileNode> requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			news(true, "File downloaded");
+	}
 
-	public void stageFiles(Stage stage)
+	@Override
+	public void onSetFileResponse(RequestStatus<FileNode> requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+		{
+			if (curFolder == requestStatus.getData().getParentFolder())
+				showFolder(curFolder);//reload
+
+			news(true, "File uploaded to server");
+		}
+	}
+
+	@Override
+	public void onRemoveFileResponse(RequestStatus<FileNode> requestStatus)
+	{
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+		{
+			if (curFolder == requestStatus.getData().getParentFolder())
+				showFolder(curFolder);//reload
+
+			news(true, "File removed from server");
+		}
+	}
+
+	@Override
+	public void onStart(Stage stage)
 	{
 		BorderPane root = new BorderPane();
 
@@ -131,14 +186,14 @@ public class FilesStage extends ViewStage
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setTitle("Select file for upload to server");
 			File file = fileChooser.showOpenDialog(stage);
-			clientController.setFile(file);
+			clientController.setFile(file, curFolder);
 		});
 
 		getFileButton = customButton(null, imageGetFile);
 		leftPane.getChildren().add(getFileButton);
 		getFileButton.setOnAction(event ->
 		{
-			clientController.writeFile();
+			clientController.getFile(selectedFile);
 		});
 
 		deleteFileButton = customButton(null, imageDeleteFile);
@@ -146,10 +201,11 @@ public class FilesStage extends ViewStage
 
 		deleteFileButton.setOnAction(event ->
 		{
-			clientController.removeFile();
+			clientController.removeFile(selectedFile);
+			selectFile(null);
 		});
 
-		onFileUnselected();
+		selectFile(null);
 		stage.getScene().setRoot(root);
 
 		clientController.userFiles();
@@ -165,7 +221,7 @@ public class FilesStage extends ViewStage
 		{
 			e.printStackTrace();
 		}
-		ClientApp.news(false, "Can not to read interface components");
+		news(false, "Can not to read interface components");
 
 		Platform.exit();
 		return null;

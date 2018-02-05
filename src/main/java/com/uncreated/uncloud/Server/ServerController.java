@@ -4,9 +4,10 @@ import com.uncreated.uncloud.Server.auth.AuthService;
 import com.uncreated.uncloud.Server.auth.Session;
 import com.uncreated.uncloud.Server.auth.User;
 import com.uncreated.uncloud.Server.auth.UsersRepository;
+import com.uncreated.uncloud.Server.storage.FileNode;
 import com.uncreated.uncloud.Server.storage.FileTransfer;
+import com.uncreated.uncloud.Server.storage.FolderNode;
 import com.uncreated.uncloud.Server.storage.StorageService;
-import com.uncreated.uncloud.Server.storage.UserFiles;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -60,27 +61,27 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/files", method = GET)
-	public ResponseEntity<Answer> files(HttpEntity<String> httpEntity)
+	public ResponseEntity files(HttpEntity httpEntity)
 	{
 		try
 		{
 			String login = authService.getLogin(httpEntity);
-			UserFiles userFiles = storageService.getUserFiles(login);
-			return ResponseEntity.status(HttpStatus.OK).body(userFiles);
+			FolderNode folderNode = storageService.getUserFiles(login);
+			return ResponseEntity.status(HttpStatus.OK).body(folderNode);
 		} catch (RequestException e)
 		{
-			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
+			return ResponseEntity.status(e.getHttpCode()).body(e);
 		}
 	}
 
 	@RequestMapping(value = "/file", method = GET)
-	public ResponseEntity<Answer> getFile(@RequestParam(value = "path") String path,
-										  @RequestParam(value = "part") Integer part,
-										  HttpEntity<String> httpEntity)
+	public ResponseEntity<Answer> getFile(@RequestParam(value = "part") Integer part,
+										  HttpEntity<FileNode> httpEntity)
 	{
 		try
 		{
 			String login = authService.getLogin(httpEntity);
+			String path = httpEntity.getBody().getName();
 			FileTransfer fileTransfer = storageService.getFile(login, path, part);
 			return ResponseEntity.status(HttpStatus.OK).body(fileTransfer);
 		} catch (RequestException e)
@@ -90,12 +91,12 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/file", method = RequestMethod.DELETE)
-	public ResponseEntity<Answer> deleteFile(@RequestParam(value = "path") String path,
-											 HttpEntity<String> httpEntity)
+	public ResponseEntity<Answer> deleteFile(HttpEntity<FileNode> httpEntity)
 	{
 		try
 		{
 			String login = authService.getLogin(httpEntity);
+			String path = httpEntity.getBody().getName();
 			storageService.removeFile(login, path);
 			return ResponseEntity.status(HttpStatus.OK).body(null);
 		} catch (RequestException e)

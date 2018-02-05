@@ -1,14 +1,13 @@
 package com.uncreated.uncloud.Client;
 
 import com.uncreated.uncloud.Client.View.ClientView;
-import com.uncreated.uncloud.Server.storage.FileInfo;
+import com.uncreated.uncloud.Server.storage.FileNode;
 import com.uncreated.uncloud.Server.storage.FileTransfer;
-import com.uncreated.uncloud.Server.storage.UserFiles;
+import com.uncreated.uncloud.Server.storage.FolderNode;
 import javafx.application.Platform;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class ClientController
 {
@@ -17,10 +16,7 @@ public class ClientController
 	private RequestHandler requestHandler;
 	private ClientView clientView;
 
-	private UserFiles userFiles;
-	private String path = "/";
-	private ArrayList<String> curFiles;
-	private String selectedFile;
+	private FolderNode rootFolder;
 
 	public ClientController(ClientView clientView)
 	{
@@ -61,10 +57,12 @@ public class ClientController
 	{
 		runThread(() ->
 		{
-			unselectFile();
-			RequestStatus<UserFiles> requestStatus = requestHandler.files();
+			RequestStatus<FolderNode> requestStatus = requestHandler.files();
 			if (requestStatus.isOk())
-				this.userFiles = requestStatus.getData();
+			{
+				this.rootFolder = requestStatus.getData();
+				this.rootFolder.initRelations();
+			}
 
 			Platform.runLater(() ->
 			{
@@ -73,45 +71,40 @@ public class ClientController
 		});
 	}
 
-	private RequestStatus writeFile(FileInfo fileInfo)
+	private RequestStatus<FileNode> getFile(FileNode fileNode, int parts)
 	{
-		RequestStatus requestStatus = null;
-		int szi = FileTransfer.getParts(fileInfo.getSize());
-		for (int i = 0; i < szi; i++)
+		RequestStatus<FileNode> requestStatus = null;
+		for (int i = 0; i < parts; i++)
 		{
-			RequestStatus<FileTransfer> responseStatus = requestHandler.getFile(fileInfo.getPath(), 0);
-			if (!responseStatus.isOk())
+			RequestStatus<FileTransfer> requestStatusPart = requestHandler.getFile(fileNode, i);
+			if (!requestStatusPart.isOk())
 			{
-				new File(responseStatus.getData().getPath()).delete();
-				requestStatus = new RequestStatus(false, "File download has been interrupted");
+				new File(requestStatusPart.getData().getPath()).delete();
+				requestStatus = new RequestStatus<>(false, "File download has been interrupted");
 				break;
 			}
 			try
 			{
-				responseStatus.getData().write(ROOT_FOLDER);
+				requestStatusPart.getData().write(ROOT_FOLDER);
 			} catch (IOException e)
 			{
-				requestStatus = new RequestStatus(false, "Can not write file");
+				requestStatus = new RequestStatus<>(false, "Can not write file");
 				break;
 			}
 		}
 		return requestStatus != null ? requestStatus : new RequestStatus(true);
 	}
 
-	public void writeFile()
+	public void getFile(FileNode fileNode)
 	{
 		runThread(() ->
 		{
-			RequestStatus requestStatus;
-			if (selectedFile != null)
+			RequestStatus<FileNode> requestStatus = getFile(fileNode.getFilePath(), FileTransfer.getParts(fileNode.getSize()));
+			if (requestStatus.isOk())
 			{
-				FileInfo fileInfo = userFiles.getFileInfo(path + selectedFile);
-				if (fileInfo != null)
-					requestStatus = writeFile(fileInfo);
-				else
-					requestStatus = new RequestStatus(false, "File not found");
-			} else
-				requestStatus = new RequestStatus(false, "File not selected");
+				requestStatus.setData(fileNode);
+
+			}
 			Platform.runLater(() ->
 			{
 				clientView.onGetFileResponse(requestStatus);
@@ -119,22 +112,22 @@ public class ClientController
 		});
 	}
 
-	private RequestStatus readFile(File file)
+	private RequestStatus<FileNode> setFile(File file, FileNode fileNode)
 	{
-		RequestStatus requestStatus = null;
+		RequestStatus<FileNode> requestStatus = null;
 
-		FileInfo fileInfo = new FileInfo(path + file.getName(), file.length());
-		int szi = FileTransfer.getParts(fileInfo.getSize());
+		String path = fileNode.getFilePath().getName();
+		int szi = FileTransfer.getParts(fileNode.getSize());
 		int n = 5;
 		for (int i = 0; i < szi; i++)
 		{
-			FileTransfer fileTransfer = new FileTransfer(fileInfo.getPath(), i, FileTransfer.getSizeOfPart(fileInfo.getSize(), i));
+			FileTransfer fileTransfer = new FileTransfer(path, i, FileTransfer.getSizeOfPart(fileNode.getSize(), i));
 			try
 			{
 				fileTransfer.read(file);
 			} catch (IOException e)
 			{
-				requestStatus = new RequestStatus(false, "Can not read file");
+				requestStatus = new RequestStatus<>(false, "Can not read file");
 				break;
 			}
 			RequestStatus responseStatus = requestHandler.setFile(fileTransfer);
@@ -142,23 +135,31 @@ public class ClientController
 				n--;
 			if (n < 0)
 			{
-				requestStatus = new RequestStatus(false, "File upload has been interrupted");
+				requestStatus = new RequestStatus<>(false, "File upload has been interrupted");
 				break;
 			}
 		}
 		return requestStatus != null ? requestStatus : new RequestStatus(true);
 	}
 
-	public void setFile(File file)
+	public void setFile(File file, FolderNode curFolder)
 	{
 		runThread(() ->
 		{
-			RequestStatus requestStatus;
+			RequestStatus<FileNode> requestStatus;
 			if (file.exists())
 			{
-				requestStatus = readFile(file);
+				FileNode fileNode = new FileNode(file);
+				fileNode.setParentFolder(curFolder);
+				requestStatus = setFile(file, fileNode).setData(fileNode);
+				if (requestStatus.isOk())
+				{
+					curFolder.add(fileNode);
+					curFolder.initRelations();
+					requestStatus.setData(fileNode);
+				}
 			} else
-				requestStatus = new RequestStatus(false, "File not found");
+				requestStatus = new RequestStatus<>(false, "File not found");
 			Platform.runLater(() ->
 			{
 				clientView.onSetFileResponse(requestStatus);
@@ -166,73 +167,25 @@ public class ClientController
 		});
 	}
 
-	public void removeFile()
+	public void removeFile(FileNode fileNode)
 	{
 		runThread(() ->
 		{
-			RequestStatus requestStatus;
-			String name = selectedFile;
-			if (selectedFile != null)
+			RequestStatus<FileNode> requestStatus = requestHandler.removeFile(fileNode.getFilePath());
+			if (requestStatus.isOk())
 			{
-				FileInfo fileInfo = userFiles.getFileInfo(path + selectedFile);
-				if (fileInfo != null)
-				{
-					requestStatus = requestHandler.removeFile(fileInfo.getPath());
-					unselectFile();
-					curFiles.remove(name);
-					userFiles.remove(fileInfo);
-				} else
-					requestStatus = new RequestStatus(false, "File not found");
-			} else
-				requestStatus = new RequestStatus(false, "File not selected");
+				fileNode.getParentFolder().getFiles().remove(fileNode);
+				requestStatus.setData(fileNode);
+			}
 			Platform.runLater(() ->
 			{
 				clientView.onRemoveFileResponse(requestStatus);
-				clientView.onFolderOpen(curFiles, path.equals("/"));
 			});
 		});
 	}
 
-	public void goBack()
+	public FolderNode getRootFolder()
 	{
-		unselectFile();
-		if (path.length() > 1)
-		{
-			path = path.substring(0, path.lastIndexOf('/'));
-			path = path.substring(0, path.lastIndexOf('/') + 1);
-		}
-		curFiles = userFiles.getFilesFromDirectory(path);
-		clientView.onFolderOpen(curFiles, path.equals("/"));
-	}
-
-	private void goToFolder(String folderName)
-	{
-		unselectFile();
-		if (curFiles != null)
-			for (String file : curFiles)
-				if (file.contains(folderName))
-				{
-					path += folderName;
-					break;
-				}
-		curFiles = userFiles.getFilesFromDirectory(path);
-		clientView.onFolderOpen(curFiles, path.equals("/"));
-	}
-
-	private void unselectFile()
-	{
-		selectedFile = null;
-		clientView.onFileUnselected();
-	}
-
-	public void fileClick(String name)
-	{
-		if (name.endsWith("/"))
-			goToFolder(name);
-		else
-		{
-			selectedFile = name;
-			clientView.onFileSelected();
-		}
+		return rootFolder;
 	}
 }
