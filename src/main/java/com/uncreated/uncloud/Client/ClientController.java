@@ -1,5 +1,6 @@
 package com.uncreated.uncloud.Client;
 
+import com.uncreated.uncloud.Client.View.ClientView;
 import com.uncreated.uncloud.Server.storage.FileInfo;
 import com.uncreated.uncloud.Server.storage.FileTransfer;
 import com.uncreated.uncloud.Server.storage.UserFiles;

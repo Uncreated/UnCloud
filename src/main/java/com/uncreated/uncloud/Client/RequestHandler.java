@@ -9,6 +9,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import javax.validation.constraints.NotNull;
@@ -125,17 +126,23 @@ public class RequestHandler
 
 		private <REQ, RESP> RESP go(@NotNull REQ req, Class<RESP> tClass) throws RequestException
 		{
-			HttpHeaders httpHeaders = new HttpHeaders();
-			if (session != null)
-				httpHeaders.set("Authorization", session.getAccessToken());
-
-			HttpEntity<REQ> entity = new HttpEntity<>(req, httpHeaders);
 			try
 			{
-				return restTemplate.exchange(getUrl(), method, entity, tClass).getBody();
-			} catch (HttpClientErrorException e)
+				HttpHeaders httpHeaders = new HttpHeaders();
+				if (session != null)
+					httpHeaders.set("Authorization", session.getAccessToken());
+
+				HttpEntity<REQ> entity = new HttpEntity<>(req, httpHeaders);
+				try
+				{
+					return restTemplate.exchange(getUrl(), method, entity, tClass).getBody();
+				} catch (HttpClientErrorException e)
+				{
+					throw new RequestException(e.getStatusText(), e.getStatusCode());
+				}
+			} catch (ResourceAccessException e)
 			{
-				throw new RequestException(e.getStatusText(), e.getStatusCode());
+				throw new RequestException("Connection timed out", null);
 			}
 		}
 

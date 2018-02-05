@@ -1,4 +1,6 @@
-package com.uncreated.uncloud.Client;
+package com.uncreated.uncloud.Client.View;
+
+import com.uncreated.uncloud.Client.RequestStatus;
 
 import java.util.ArrayList;
 
