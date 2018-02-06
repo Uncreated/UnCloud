@@ -2,11 +2,13 @@ package com.uncreated.uncloud.Client.View;
 
 import com.uncreated.uncloud.Client.ClientController;
 import com.uncreated.uncloud.Client.RequestStatus;
-import com.uncreated.uncloud.Server.storage.FileNode;
+import com.uncreated.uncloud.Common.FileStorage.FNode;
+import com.uncreated.uncloud.Common.FileStorage.FileNode;
+import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import javafx.application.Application;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
+
+import static com.uncreated.uncloud.Client.View.ViewStage.news;
 
 public class ClientApp extends Application implements ClientView
 {
@@ -16,6 +18,7 @@ public class ClientApp extends Application implements ClientView
 
 	private AuthStage authStage;
 	private FilesStage filesStage;
+	private ViewStage curStage;
 
 	public static void main(String[] args)
 	{
@@ -29,61 +32,55 @@ public class ClientApp extends Application implements ClientView
 		filesStage = new FilesStage(clientController);
 	}
 
-	public static void news(boolean good, String message)
+	@Override
+	public void onFailRequest(RequestStatus requestStatus)
 	{
-		Alert alert = new Alert(good ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, message, ButtonType.OK);
-		alert.setTitle("123");
-		alert.show();
+		curStage.onFailRequest(requestStatus);
+	}
+
+	@Override
+	public void onUpdateFiles(FolderNode mergedFiles)
+	{
+		curStage.onUpdateFiles(mergedFiles);
 	}
 
 	@Override
 	public void onRegister(RequestStatus requestStatus)
 	{
-		if (!requestStatus.isOk())
-			news(false, requestStatus.getMsg());
-		else
-			news(true, "You have successfully registered");
+		curStage.onRegister(requestStatus);
 	}
 
 	@Override
-	public void onAuth(RequestStatus requestStatus)
+	public void onAuth(RequestStatus<FolderNode> requestStatus)
 	{
 		if (!requestStatus.isOk())
 		{
 			news(false, requestStatus.getMsg());
 			authStage.onAuth(requestStatus);
 		} else
+		{
+			curStage = filesStage;
 			filesStage.onStart(stage);
+		}
 	}
 
 	@Override
-	public void onUserFiles(RequestStatus requestStatus)
+	public void onGetFileResponse(RequestStatus<FNode> requestStatus)
 	{
-		filesStage.onUserFiles(requestStatus);
-	}
-
-	@Override
-	public void onGetFileResponse(RequestStatus<FileNode> requestStatus)
-	{
-		filesStage.onGetFileResponse(requestStatus);
+		curStage.onGetFileResponse(requestStatus);
 	}
 
 	@Override
 	public void onSetFileResponse(RequestStatus<FileNode> requestStatus)
 	{
-		filesStage.onSetFileResponse(requestStatus);
-	}
-
-	@Override
-	public void onRemoveFileResponse(RequestStatus<FileNode> requestStatus)
-	{
-		filesStage.onRemoveFileResponse(requestStatus);
+		curStage.onSetFileResponse(requestStatus);
 	}
 
 	@Override
 	public void start(Stage primaryStage) throws Exception
 	{
 		stage = primaryStage;
+		curStage = authStage;
 		authStage.onStart(stage);
 	}
 }

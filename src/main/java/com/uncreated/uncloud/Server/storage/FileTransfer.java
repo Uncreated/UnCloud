@@ -2,7 +2,9 @@ package com.uncreated.uncloud.Server.storage;
 
 import com.uncreated.uncloud.Server.Answer;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class FileTransfer implements Answer
 {
@@ -24,7 +26,7 @@ public class FileTransfer implements Answer
 	public void read(File file) throws IOException
 	{
 		RandomAccessFile randomAccessFile = new RandomAccessFile(file, "r");
-		randomAccessFile.seek((long)part * (long)PART_SIZE);
+		randomAccessFile.seek((long) part * (long) PART_SIZE);
 		randomAccessFile.read(data);
 		randomAccessFile.close();
 	}
@@ -37,7 +39,7 @@ public class FileTransfer implements Answer
 	public void write(File file) throws IOException
 	{
 		RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
-		randomAccessFile.seek((long)part * (long)PART_SIZE);
+		randomAccessFile.seek((long) part * (long) PART_SIZE);
 		randomAccessFile.write(data);
 		randomAccessFile.close();
 	}
@@ -79,5 +81,10 @@ public class FileTransfer implements Answer
 			fileSize = PART_SIZE;
 
 		return (int) fileSize;
+	}
+
+	public static long getShift(int part)
+	{
+		return PART_SIZE * part;
 	}
 }

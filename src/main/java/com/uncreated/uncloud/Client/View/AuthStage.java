@@ -38,6 +38,9 @@ public class AuthStage extends ViewStage
 
 		progressIndicator = new ProgressIndicator();
 
+		loginTextField.setText("admin");
+		passwordTextField.setText("123");
+
 		HBox hBox = new HBox(registerButton, authButton);
 		hBox.setSpacing(15);
 
@@ -70,10 +73,15 @@ public class AuthStage extends ViewStage
 	}
 
 	@Override
+	public void onFailRequest(RequestStatus requestStatus)
+	{
+		news(false, requestStatus.getMsg());
+	}
+
+	@Override
 	public void onAuth(RequestStatus requestStatus)
 	{
 		setLoading(false);
-
 	}
 
 	private void setLoading(boolean on)
@@ -89,6 +97,10 @@ public class AuthStage extends ViewStage
 	public void onRegister(RequestStatus requestStatus)
 	{
 		setLoading(false);
+		if (!requestStatus.isOk())
+			news(false, requestStatus.getMsg());
+		else
+			news(true, "You have successfully registered");
 	}
 
 	private void onAuthClick(TextField loginTextField, TextField passwordTextField, boolean auth)
@@ -103,6 +115,6 @@ public class AuthStage extends ViewStage
 			else
 				clientController.register(login, password);
 		} else
-			ClientApp.news(false, "Incorrect login or password");
+			news(false, "Incorrect login or password");
 	}
 }

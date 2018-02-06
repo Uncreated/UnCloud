@@ -2,7 +2,11 @@ package com.uncreated.uncloud.Client.View;
 
 import com.uncreated.uncloud.Client.ClientController;
 import com.uncreated.uncloud.Client.RequestStatus;
-import com.uncreated.uncloud.Server.storage.FileNode;
+import com.uncreated.uncloud.Common.FileStorage.FNode;
+import com.uncreated.uncloud.Common.FileStorage.FileNode;
+import com.uncreated.uncloud.Common.FileStorage.FolderNode;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 
 public abstract class ViewStage implements ClientView
@@ -15,6 +19,19 @@ public abstract class ViewStage implements ClientView
 	}
 
 	public abstract void onStart(Stage stage);
+
+	public static void news(boolean good, String message)
+	{
+		Alert alert = new Alert(good ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, message, ButtonType.OK);
+		alert.setTitle(good ? "Successfully" : "Fail");
+		alert.show();
+	}
+
+	@Override
+	public void onFailRequest(RequestStatus requestStatus)
+	{
+		news(false, requestStatus.getMsg());
+	}
 
 	@Override
 	public void onRegister(RequestStatus requestStatus)
@@ -29,13 +46,7 @@ public abstract class ViewStage implements ClientView
 	}
 
 	@Override
-	public void onUserFiles(RequestStatus requestStatus)
-	{
-
-	}
-
-	@Override
-	public void onGetFileResponse(RequestStatus<FileNode> requestStatus)
+	public void onGetFileResponse(RequestStatus<FNode> requestStatus)
 	{
 
 	}
@@ -47,8 +58,10 @@ public abstract class ViewStage implements ClientView
 	}
 
 	@Override
-	public void onRemoveFileResponse(RequestStatus<FileNode> requestStatus)
+	public void onUpdateFiles(FolderNode mergedFiles)
 	{
 
 	}
+
+
 }

@@ -1,12 +1,12 @@
 package com.uncreated.uncloud.Server;
 
+import com.uncreated.uncloud.Common.FileStorage.FNode;
+import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import com.uncreated.uncloud.Server.auth.AuthService;
 import com.uncreated.uncloud.Server.auth.Session;
 import com.uncreated.uncloud.Server.auth.User;
 import com.uncreated.uncloud.Server.auth.UsersRepository;
-import com.uncreated.uncloud.Server.storage.FileNode;
 import com.uncreated.uncloud.Server.storage.FileTransfer;
-import com.uncreated.uncloud.Server.storage.FolderNode;
 import com.uncreated.uncloud.Server.storage.StorageService;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
@@ -66,7 +66,7 @@ public class ServerController
 		try
 		{
 			String login = authService.getLogin(httpEntity);
-			FolderNode folderNode = storageService.getUserFiles(login);
+			FolderNode folderNode = storageService.getFiles(login);
 			return ResponseEntity.status(HttpStatus.OK).body(folderNode);
 		} catch (RequestException e)
 		{
@@ -76,13 +76,13 @@ public class ServerController
 
 	@RequestMapping(value = "/file", method = GET)
 	public ResponseEntity<Answer> getFile(@RequestParam(value = "part") Integer part,
-										  HttpEntity<FileNode> httpEntity)
+										  HttpEntity<FNode> httpEntity)
 	{
 		try
 		{
 			String login = authService.getLogin(httpEntity);
 			String path = httpEntity.getBody().getName();
-			FileTransfer fileTransfer = storageService.getFile(login, path, part);
+			FileTransfer fileTransfer = storageService.getFilePart(login, path, part);
 			return ResponseEntity.status(HttpStatus.OK).body(fileTransfer);
 		} catch (RequestException e)
 		{
@@ -91,7 +91,7 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/file", method = RequestMethod.DELETE)
-	public ResponseEntity<Answer> deleteFile(HttpEntity<FileNode> httpEntity)
+	public ResponseEntity<Answer> deleteFile(HttpEntity<FNode> httpEntity)
 	{
 		try
 		{
@@ -106,12 +106,26 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/file", method = POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<Answer> putFile(HttpEntity<FileTransfer> httpEntity)
+	public ResponseEntity<Answer> postFile(HttpEntity<FileTransfer> httpEntity)
 	{
 		try
 		{
 			String login = authService.getLogin(httpEntity);
 			storageService.setFile(login, httpEntity.getBody());
+			return ResponseEntity.status(HttpStatus.OK).body(null);
+		} catch (RequestException e)
+		{
+			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
+		}
+	}
+
+	@RequestMapping(value = "/folder", method = POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity<Answer> postFolder(HttpEntity<FNode> httpEntity)
+	{
+		try
+		{
+			String login = authService.getLogin(httpEntity);
+			storageService.createFolder(login, httpEntity.getBody().getName());
 			return ResponseEntity.status(HttpStatus.OK).body(null);
 		} catch (RequestException e)
 		{

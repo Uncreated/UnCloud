@@ -1,27 +1,34 @@
 package com.uncreated.uncloud.Client;
 
 import com.uncreated.uncloud.Client.View.ClientView;
-import com.uncreated.uncloud.Server.storage.FileNode;
+import com.uncreated.uncloud.Common.FileStorage.FNode;
+import com.uncreated.uncloud.Common.FileStorage.FileNode;
+import com.uncreated.uncloud.Common.FileStorage.FolderNode;
+import com.uncreated.uncloud.Common.FileStorage.Storage;
 import com.uncreated.uncloud.Server.storage.FileTransfer;
-import com.uncreated.uncloud.Server.storage.FolderNode;
 import javafx.application.Platform;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 public class ClientController
 {
-	private static final String ROOT_FOLDER = "C:/localFiles";
+	private static final String ROOT_FOLDER = "C:/UnCloud/Client/";
+
+	private Storage storage;
 
 	private RequestHandler requestHandler;
 	private ClientView clientView;
 
-	private FolderNode rootFolder;
+	private FolderNode mergedFolder;
+	private String login;
 
 	public ClientController(ClientView clientView)
 	{
 		this.clientView = clientView;
 		requestHandler = new RequestHandler();
+		storage = new Storage(ROOT_FOLDER);
 	}
 
 	private void runThread(Runnable r)
@@ -41,42 +48,52 @@ public class ClientController
 		});
 	}
 
+	private RequestStatus getMergedFolder()
+	{
+		RequestStatus<FolderNode> requestStatus = requestHandler.files();
+		if (requestStatus.isOk())
+		{
+			FolderNode serverFolder = requestStatus.getData();
+			try
+			{
+				FolderNode clientFolder = storage.getFiles(login);
+				mergedFolder = new FolderNode(clientFolder, serverFolder);
+			} catch (FileNotFoundException e)
+			{
+				requestStatus = new RequestStatus<>(false, "Local folder not found");
+			}
+		}
+		return requestStatus;
+	}
+
 	public void auth(String login, String password)
 	{
 		runThread(() ->
 		{
-			RequestStatus requestStatus = requestHandler.auth(login, password);
-			Platform.runLater(() ->
-			{
-				clientView.onAuth(requestStatus);
-			});
-		});
-	}
-
-	public void userFiles()
-	{
-		runThread(() ->
-		{
-			RequestStatus<FolderNode> requestStatus = requestHandler.files();
+			RequestStatus<FolderNode> requestStatus = requestHandler.auth(login, password);
 			if (requestStatus.isOk())
 			{
-				this.rootFolder = requestStatus.getData();
-				this.rootFolder.initRelations();
+				this.login = login;
+				requestStatus = getMergedFolder();
 			}
-
+			final RequestStatus<FolderNode> reqStatus = requestStatus;
 			Platform.runLater(() ->
 			{
-				clientView.onUserFiles(requestStatus);
+				clientView.onAuth(reqStatus);
+				if (reqStatus.isOk())
+				{
+					clientView.onUpdateFiles(mergedFolder);
+				}
 			});
 		});
 	}
 
-	private RequestStatus<FileNode> getFile(FileNode fileNode, int parts)
+	private RequestStatus<FNode> getFile(FNode fnode, int parts)
 	{
-		RequestStatus<FileNode> requestStatus = null;
+		RequestStatus<FNode> requestStatus = null;
 		for (int i = 0; i < parts; i++)
 		{
-			RequestStatus<FileTransfer> requestStatusPart = requestHandler.getFile(fileNode, i);
+			RequestStatus<FileTransfer> requestStatusPart = requestHandler.getFile(fnode, i);
 			if (!requestStatusPart.isOk())
 			{
 				new File(requestStatusPart.getData().getPath()).delete();
@@ -99,7 +116,7 @@ public class ClientController
 	{
 		runThread(() ->
 		{
-			RequestStatus<FileNode> requestStatus = getFile(fileNode.getFilePath(), FileTransfer.getParts(fileNode.getSize()));
+			RequestStatus<FNode> requestStatus = getFile(fileNode.getFilePath(), FileTransfer.getParts(fileNode.getSize()));
 			if (requestStatus.isOk())
 			{
 				requestStatus.setData(fileNode);
@@ -167,25 +184,61 @@ public class ClientController
 		});
 	}
 
-	public void removeFile(FileNode fileNode)
+
+	public void removeFileFromClient(FNode fNode)
 	{
+		try
+		{
+			storage.removeFile(login, fNode.getFilePath().getName());
+			folderUpdateRequestResult(getMergedFolder());
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public void removeFile(FNode fNode)
+	{
+		if (fNode.isOnClient())
+			removeFileFromClient(fNode);
+		if (fNode.isOnServer())
+			removeFileFromServer(fNode);
+	}
+
+	public void removeFileFromServer(FNode fNode)
+	{
+		FNode fNodePack = fNode.getFilePath();
 		runThread(() ->
 		{
-			RequestStatus<FileNode> requestStatus = requestHandler.removeFile(fileNode.getFilePath());
+			RequestStatus requestStatus = requestHandler.removeFile(fNodePack);
 			if (requestStatus.isOk())
-			{
-				fileNode.getParentFolder().getFiles().remove(fileNode);
-				requestStatus.setData(fileNode);
-			}
-			Platform.runLater(() ->
-			{
-				clientView.onRemoveFileResponse(requestStatus);
-			});
+				requestStatus = getMergedFolder();
+
+			folderUpdateRequestResult(requestStatus);
 		});
 	}
 
-	public FolderNode getRootFolder()
+	public void createFolder(String name, FolderNode curFolder)
 	{
-		return rootFolder;
+		runThread(() ->
+		{
+			FNode fNode = new FNode(curFolder.getFilePath().getName() + name);
+			RequestStatus requestStatus = requestHandler.createFolder(fNode);
+			if (requestStatus.isOk())
+				requestStatus = getMergedFolder();
+
+			folderUpdateRequestResult(requestStatus);
+		});
+	}
+
+	private void folderUpdateRequestResult(RequestStatus requestStatus)
+	{
+		Platform.runLater(() ->
+		{
+			if (requestStatus.isOk())
+				clientView.onUpdateFiles(mergedFolder);
+			else
+				clientView.onFailRequest(requestStatus);
+		});
 	}
 }

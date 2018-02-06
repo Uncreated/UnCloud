@@ -1,11 +1,12 @@
 package com.uncreated.uncloud.Client;
 
+import com.uncreated.uncloud.Common.FileStorage.FNode;
 import com.uncreated.uncloud.Server.RequestException;
 import com.uncreated.uncloud.Server.auth.Session;
 import com.uncreated.uncloud.Server.auth.User;
-import com.uncreated.uncloud.Server.storage.FileNode;
+import com.uncreated.uncloud.Common.FileStorage.FileNode;
 import com.uncreated.uncloud.Server.storage.FileTransfer;
-import com.uncreated.uncloud.Server.storage.FolderNode;
+import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -68,13 +69,13 @@ public class RequestHandler
 		}
 	}
 
-	public RequestStatus<FileTransfer> getFile(FileNode fileNode, Integer part)
+	public RequestStatus<FileTransfer> getFile(FNode fNode, Integer part)
 	{
 		Request request = new Request("file", HttpMethod.GET);
 		request.add("part", part.toString());
 		try
 		{
-			FileTransfer fileTransfer = request.go(fileNode, FileTransfer.class);
+			FileTransfer fileTransfer = request.go(fNode, FileTransfer.class);
 			return new RequestStatus<FileTransfer>(true).setData(fileTransfer);
 		} catch (RequestException e)
 		{
@@ -83,7 +84,7 @@ public class RequestHandler
 		}
 	}
 
-	public RequestStatus<FileNode> removeFile(FileNode fileNode)
+	public RequestStatus<FNode> removeFile(FNode fileNode)
 	{
 		Request request = new Request("file", HttpMethod.DELETE);
 		try
@@ -103,6 +104,20 @@ public class RequestHandler
 		try
 		{
 			request.go(fileTransfer, String.class);
+			return new RequestStatus(true);
+		} catch (RequestException e)
+		{
+			e.printStackTrace();
+			return new RequestStatus(false, e.getMessage());
+		}
+	}
+
+	public RequestStatus createFolder(FNode fNode)
+	{
+		Request request = new Request("folder", HttpMethod.POST);
+		try
+		{
+			request.go(fNode, FNode.class);
 			return new RequestStatus(true);
 		} catch (RequestException e)
 		{
