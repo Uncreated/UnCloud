@@ -6,7 +6,7 @@ import com.uncreated.uncloud.Server.auth.AuthService;
 import com.uncreated.uncloud.Server.auth.Session;
 import com.uncreated.uncloud.Server.auth.User;
 import com.uncreated.uncloud.Server.auth.UsersRepository;
-import com.uncreated.uncloud.Server.storage.FileTransfer;
+import com.uncreated.uncloud.Common.FileStorage.FileTransfer;
 import com.uncreated.uncloud.Server.storage.StorageService;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;

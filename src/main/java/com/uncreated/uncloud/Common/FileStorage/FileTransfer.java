@@ -1,4 +1,4 @@
-package com.uncreated.uncloud.Server.storage;
+package com.uncreated.uncloud.Common.FileStorage;
 
 import com.uncreated.uncloud.Server.Answer;
 

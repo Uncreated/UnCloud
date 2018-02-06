@@ -1,6 +1,5 @@
 package com.uncreated.uncloud.Common.FileStorage;
 
-import com.uncreated.uncloud.Server.storage.FileTransfer;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 
 import java.io.File;

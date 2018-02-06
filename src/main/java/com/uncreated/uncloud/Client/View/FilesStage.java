@@ -36,17 +36,24 @@ public class FilesStage extends ViewStage
 			"clientServerFile.png",
 			"clientServerFolder.png",
 			"createFolder.png",
-			"deleteFile.png",
+			"deleteClient.png",
+			"deleteServer.png",
 			"file.png",
 			"folder.png",
-			"getFile.png",
+			"download.png",
+			"upload.png",
 			"serverFile.png",
 			"serverFolder.png"};
 
 	private BorderPane rightPane;
+	private VBox leftPane;
 
-	private ToggleButton getFileButton;
-	private ToggleButton deleteFileButton;
+	private ToggleButton createFolderButton;
+	private ToggleButton addFileButton;
+	private ToggleButton downloadButton;
+	private ToggleButton uploadButton;
+	private ToggleButton deleteClientButton;
+	private ToggleButton deleteServerButton;
 
 	private HashMap<String, Image> images;
 
@@ -79,8 +86,20 @@ public class FilesStage extends ViewStage
 	private void selectFNode(FNode fNode)
 	{
 		selectedFNode = fNode;
-		getFileButton.setDisable(fNode == null);
-		deleteFileButton.setDisable(fNode == null);
+		leftPane.getChildren().clear();
+		leftPane.getChildren().addAll(createFolderButton, addFileButton);
+		if (fNode != null)
+		{
+			if (!fNode.isOnClient())
+				leftPane.getChildren().add(downloadButton);
+			if (!fNode.isOnServer())
+				leftPane.getChildren().add(uploadButton);
+
+			if (fNode.isOnClient())
+				leftPane.getChildren().add(deleteClientButton);
+			if (fNode.isOnServer())
+				leftPane.getChildren().add(deleteServerButton);
+		}
 	}
 
 	private void showFolder(FolderNode folderNode)
@@ -188,7 +207,7 @@ public class FilesStage extends ViewStage
 	{
 		BorderPane root = new BorderPane();
 
-		VBox leftPane = new VBox();
+		leftPane = new VBox();
 		ScrollPane scrollPane = new ScrollPane();
 		scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
@@ -205,7 +224,7 @@ public class FilesStage extends ViewStage
 		leftPane.setPadding(new Insets(10));
 		leftPane.setSpacing(10);
 
-		ToggleButton createFolderButton = customButton(null, images.get("createFolder.png"));
+		createFolderButton = customButton(null, images.get("createFolder.png"));
 		leftPane.getChildren().add(createFolderButton);
 		createFolderButton.setOnAction(event ->
 		{
@@ -223,35 +242,47 @@ public class FilesStage extends ViewStage
 			}
 		});
 
-		ToggleButton addFileButton = customButton(null, images.get("addFile.png"));
+		addFileButton = customButton(null, images.get("addFile.png"));
 		leftPane.getChildren().add(addFileButton);
 		addFileButton.setOnAction(event ->
 		{
+			//copy to client folder
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setTitle("Select file for upload to server");
 			File file = fileChooser.showOpenDialog(stage);
-			clientController.setFile(file, curFolder);
+			if(file!=null)
+				clientController.copyFile(file, curFolder);
 		});
 
-		getFileButton = customButton(null, images.get("getFile.png"));
-		leftPane.getChildren().add(getFileButton);
-		getFileButton.setOnAction(event ->
+		downloadButton = customButton(null, images.get("download.png"));
+		leftPane.getChildren().add(downloadButton);
+		downloadButton.setOnAction(event ->
 		{
-			//clientController.getFile(selectedFile);
+			clientController.download(selectedFNode);
+			selectFNode(null);
 		});
 
-		deleteFileButton = customButton(null, images.get("deleteFile.png"));
-		leftPane.getChildren().add(deleteFileButton);
-
-		deleteFileButton.setOnAction(event ->
+		uploadButton = customButton(null, images.get("upload.png"));
+		leftPane.getChildren().add(uploadButton);
+		uploadButton.setOnAction(event ->
 		{
-			if (selectedFNode.isOnClient() && selectedFNode.isOnServer())
-			{
-				//dialog
-				//if c1 == client
-				//if c2 == server
-			} else
-				clientController.removeFile(selectedFNode);
+			clientController.upload(selectedFNode);
+			selectFNode(null);
+		});
+
+		deleteClientButton = customButton(null, images.get("deleteClient.png"));
+		leftPane.getChildren().add(deleteClientButton);
+		deleteClientButton.setOnAction(event ->
+		{
+			clientController.removeFileFromClient(selectedFNode);
+			selectFNode(null);
+		});
+
+		deleteServerButton = customButton(null, images.get("deleteServer.png"));
+		leftPane.getChildren().add(deleteServerButton);
+		deleteServerButton.setOnAction(event ->
+		{
+			clientController.removeFileFromServer(selectedFNode);
 			selectFNode(null);
 		});
 

@@ -1,19 +1,17 @@
 package com.uncreated.uncloud.Client;
 
 import com.uncreated.uncloud.Client.View.ClientView;
-import com.uncreated.uncloud.Common.FileStorage.FNode;
-import com.uncreated.uncloud.Common.FileStorage.FileNode;
-import com.uncreated.uncloud.Common.FileStorage.FolderNode;
-import com.uncreated.uncloud.Common.FileStorage.Storage;
-import com.uncreated.uncloud.Server.storage.FileTransfer;
+import com.uncreated.uncloud.Common.FileStorage.*;
 import javafx.application.Platform;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
 
 public class ClientController
 {
+	private static final int TRY_COUNT = 3;
 	private static final String ROOT_FOLDER = "C:/UnCloud/Client/";
 
 	private Storage storage;
@@ -88,121 +86,184 @@ public class ClientController
 		});
 	}
 
-	private RequestStatus<FNode> getFile(FNode fnode, int parts)
+	public void copyFile(File source, FolderNode curNode)
 	{
-		RequestStatus<FNode> requestStatus = null;
-		for (int i = 0; i < parts; i++)
+		runThread(() ->
 		{
-			RequestStatus<FileTransfer> requestStatusPart = requestHandler.getFile(fnode, i);
-			if (!requestStatusPart.isOk())
-			{
-				new File(requestStatusPart.getData().getPath()).delete();
-				requestStatus = new RequestStatus<>(false, "File download has been interrupted");
-				break;
-			}
+			RequestStatus requestStatus;
 			try
 			{
-				requestStatusPart.getData().write(ROOT_FOLDER);
+				File dest = new File(ROOT_FOLDER + login + curNode.getFilePath().getName() + source.getName());
+				Files.copy(source.toPath(), dest.toPath());
+				requestStatus = new RequestStatus(true);
 			} catch (IOException e)
 			{
-				requestStatus = new RequestStatus<>(false, "Can not write file");
-				break;
+				e.printStackTrace();
+				requestStatus = new RequestStatus(false, e.getMessage());
 			}
+			folderUpdateRequestResult(requestStatus);
+		});
+	}
+
+	private RequestStatus downloadFile(FileNode fileNode)
+	{
+		RequestStatus requestStatus = null;
+		FNode fNode = fileNode.getFilePath();
+		int parts = fileNode.getParts();
+		for (int i = 0; i < parts; i++)
+		{
+			RequestStatus<FileTransfer> requestStatusPart = requestHandler.downloadFilePart(fNode, i);
+			if (requestStatusPart.isOk())
+			{
+				try
+				{
+					requestStatusPart.getData().write(ROOT_FOLDER + login);
+					continue;
+				} catch (IOException e)
+				{
+					requestStatus = new RequestStatus(false, "Can not write file");
+					break;
+				}
+			}
+			new File(requestStatusPart.getData().getPath()).delete();
+			requestStatus = new RequestStatus(false, "File download has been interrupted");
+			break;
 		}
 		return requestStatus != null ? requestStatus : new RequestStatus(true);
 	}
 
-	public void getFile(FileNode fileNode)
+	private RequestStatus downloadFolder(FolderNode folderNode)
+	{
+		RequestStatus requestStatus = null;
+		if (!folderNode.isOnClient())
+		{
+			FNode fNode = folderNode.getFilePath();
+			new File(ROOT_FOLDER + login + fNode.getName()).mkdirs();
+		}
+		for (FolderNode folder : folderNode.getFolders())
+		{
+			requestStatus = downloadFolder(folder);
+			for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
+				requestStatus = downloadFolder(folder);
+			if (!requestStatus.isOk())
+				return requestStatus;
+		}
+
+		for (FileNode fileNode : folderNode.getFiles())
+		{
+			if (!fileNode.isOnClient())
+			{
+				requestStatus = downloadFile(fileNode);
+				for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
+					requestStatus = downloadFile(fileNode);
+				if (!requestStatus.isOk())
+					return requestStatus;
+			}
+		}
+
+		return requestStatus != null ? requestStatus : new RequestStatus(true);
+	}
+
+	public void download(FNode fNode)
 	{
 		runThread(() ->
 		{
-			RequestStatus<FNode> requestStatus = getFile(fileNode.getFilePath(), FileTransfer.getParts(fileNode.getSize()));
-			if (requestStatus.isOk())
-			{
-				requestStatus.setData(fileNode);
+			RequestStatus requestStatus;
+			if (fNode instanceof FolderNode)
+				requestStatus = downloadFolder((FolderNode) fNode);
+			else
+				requestStatus = downloadFile((FileNode) fNode);
 
-			}
-			Platform.runLater(() ->
-			{
-				clientView.onGetFileResponse(requestStatus);
-			});
+			folderUpdateRequestResult(requestStatus);
 		});
 	}
 
-	private RequestStatus<FileNode> setFile(File file, FileNode fileNode)
+	private RequestStatus uploadFile(FileNode fileNode)
 	{
-		RequestStatus<FileNode> requestStatus = null;
+		RequestStatus requestStatus = null;
 
 		String path = fileNode.getFilePath().getName();
-		int szi = FileTransfer.getParts(fileNode.getSize());
-		int n = 5;
+		int szi = fileNode.getParts();
+		File file = new File(ROOT_FOLDER + login + path);
 		for (int i = 0; i < szi; i++)
 		{
 			FileTransfer fileTransfer = new FileTransfer(path, i, FileTransfer.getSizeOfPart(fileNode.getSize(), i));
 			try
 			{
 				fileTransfer.read(file);
+				RequestStatus responseStatus = requestHandler.setFile(fileTransfer);
+				if (!responseStatus.isOk())
+				{
+					requestStatus = new RequestStatus(false, "File upload has been interrupted");
+					break;
+				}
+
 			} catch (IOException e)
 			{
-				requestStatus = new RequestStatus<>(false, "Can not read file");
-				break;
-			}
-			RequestStatus responseStatus = requestHandler.setFile(fileTransfer);
-			if (!responseStatus.isOk())
-				n--;
-			if (n < 0)
-			{
-				requestStatus = new RequestStatus<>(false, "File upload has been interrupted");
+				requestStatus = new RequestStatus(false, "Can not read file");
 				break;
 			}
 		}
 		return requestStatus != null ? requestStatus : new RequestStatus(true);
 	}
 
-	public void setFile(File file, FolderNode curFolder)
+	private RequestStatus uploadFolder(FolderNode folderNode)
+	{
+		RequestStatus requestStatus = null;
+
+		if (!folderNode.isOnServer())
+			requestStatus = requestHandler.createFolder(folderNode.getFilePath());
+		for (FolderNode folder : folderNode.getFolders())
+		{
+			requestStatus = uploadFolder(folder);
+			for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
+				requestStatus = uploadFolder(folder);
+			if (!requestStatus.isOk())
+				return requestStatus;
+		}
+
+		for (FileNode fileNode : folderNode.getFiles())
+		{
+			if (!fileNode.isOnServer())
+			{
+				requestStatus = uploadFile(fileNode);
+				for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
+					requestStatus = uploadFile(fileNode);
+				if (!requestStatus.isOk())
+					return requestStatus;
+			}
+		}
+
+		return requestStatus != null ? requestStatus : new RequestStatus(true);
+	}
+
+	public void upload(FNode fNode)
 	{
 		runThread(() ->
 		{
-			RequestStatus<FileNode> requestStatus;
-			if (file.exists())
-			{
-				FileNode fileNode = new FileNode(file);
-				fileNode.setParentFolder(curFolder);
-				requestStatus = setFile(file, fileNode).setData(fileNode);
-				if (requestStatus.isOk())
-				{
-					curFolder.add(fileNode);
-					curFolder.initRelations();
-					requestStatus.setData(fileNode);
-				}
-			} else
-				requestStatus = new RequestStatus<>(false, "File not found");
-			Platform.runLater(() ->
-			{
-				clientView.onSetFileResponse(requestStatus);
-			});
+			RequestStatus requestStatus;
+			if (fNode instanceof FolderNode)
+				requestStatus = uploadFolder((FolderNode) fNode);
+			else
+				requestStatus = uploadFile((FileNode) fNode);
+
+			folderUpdateRequestResult(requestStatus);
 		});
 	}
 
-
 	public void removeFileFromClient(FNode fNode)
 	{
+		RequestStatus requestStatus;
 		try
 		{
 			storage.removeFile(login, fNode.getFilePath().getName());
-			folderUpdateRequestResult(getMergedFolder());
+			requestStatus = new RequestStatus(true);
 		} catch (IOException e)
 		{
 			e.printStackTrace();
+			requestStatus = new RequestStatus(false, e.getMessage());
 		}
-	}
-
-	public void removeFile(FNode fNode)
-	{
-		if (fNode.isOnClient())
-			removeFileFromClient(fNode);
-		if (fNode.isOnServer())
-			removeFileFromServer(fNode);
+		folderUpdateRequestResult(requestStatus);
 	}
 
 	public void removeFileFromServer(FNode fNode)
@@ -210,11 +271,7 @@ public class ClientController
 		FNode fNodePack = fNode.getFilePath();
 		runThread(() ->
 		{
-			RequestStatus requestStatus = requestHandler.removeFile(fNodePack);
-			if (requestStatus.isOk())
-				requestStatus = getMergedFolder();
-
-			folderUpdateRequestResult(requestStatus);
+			folderUpdateRequestResult(requestHandler.removeFile(fNodePack));
 		});
 	}
 
@@ -224,8 +281,6 @@ public class ClientController
 		{
 			FNode fNode = new FNode(curFolder.getFilePath().getName() + name);
 			RequestStatus requestStatus = requestHandler.createFolder(fNode);
-			if (requestStatus.isOk())
-				requestStatus = getMergedFolder();
 
 			folderUpdateRequestResult(requestStatus);
 		});
@@ -233,12 +288,16 @@ public class ClientController
 
 	private void folderUpdateRequestResult(RequestStatus requestStatus)
 	{
+		if (requestStatus.isOk())
+			requestStatus = getMergedFolder();
+
+		RequestStatus reqStatus = requestStatus;
 		Platform.runLater(() ->
 		{
-			if (requestStatus.isOk())
+			if (reqStatus.isOk())
 				clientView.onUpdateFiles(mergedFolder);
 			else
-				clientView.onFailRequest(requestStatus);
+				clientView.onFailRequest(reqStatus);
 		});
 	}
 }

@@ -4,8 +4,7 @@ import com.uncreated.uncloud.Common.FileStorage.FNode;
 import com.uncreated.uncloud.Server.RequestException;
 import com.uncreated.uncloud.Server.auth.Session;
 import com.uncreated.uncloud.Server.auth.User;
-import com.uncreated.uncloud.Common.FileStorage.FileNode;
-import com.uncreated.uncloud.Server.storage.FileTransfer;
+import com.uncreated.uncloud.Common.FileStorage.FileTransfer;
 import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -69,7 +68,7 @@ public class RequestHandler
 		}
 	}
 
-	public RequestStatus<FileTransfer> getFile(FNode fNode, Integer part)
+	public RequestStatus<FileTransfer> downloadFilePart(FNode fNode, Integer part)
 	{
 		Request request = new Request("file", HttpMethod.GET);
 		request.add("part", part.toString());

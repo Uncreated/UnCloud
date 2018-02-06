@@ -27,4 +27,10 @@ public class FileNode extends FNode
 	{
 		return size;
 	}
+
+	@JsonIgnore
+	public int getParts()
+	{
+		return FileTransfer.getParts(size);
+	}
 }

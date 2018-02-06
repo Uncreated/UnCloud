@@ -1,5 +1,6 @@
 package com.uncreated.uncloud.Server.storage;
 
+import com.uncreated.uncloud.Common.FileStorage.FileTransfer;
 import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import com.uncreated.uncloud.Common.FileStorage.Storage;
 import com.uncreated.uncloud.Server.RequestException;
