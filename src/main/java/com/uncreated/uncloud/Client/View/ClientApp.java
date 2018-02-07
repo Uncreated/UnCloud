@@ -25,6 +25,7 @@ public class ClientApp extends Application implements ClientView
 	public ClientApp()
 	{
 		reload();
+		authStage.setAutoAuth(true);
 	}
 
 	@Override
@@ -54,6 +55,7 @@ public class ClientApp extends Application implements ClientView
 			authStage.onAuth(requestStatus);
 		} else
 		{
+			authStage.onAuth(requestStatus);
 			curStage = filesStage;
 			filesStage.onStart(stage);
 		}

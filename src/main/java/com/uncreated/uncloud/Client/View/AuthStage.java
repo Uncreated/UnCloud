@@ -5,6 +5,7 @@ import com.uncreated.uncloud.Client.RequestStatus;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
@@ -13,13 +14,24 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
+import java.util.prefs.Preferences;
+
 public class AuthStage extends ViewStage
 {
+	private static final String PREF_REMEMBER = "prefKeyRemember";
+	private static final String PREF_LOGIN = "prefKeyLogin";
+	private static final String PREF_PASSWORD = "prefKeyPassword";
+
 	private ProgressIndicator progressIndicator;
 	private TextField loginTextField;
 	private TextField passwordTextField;
 	private Button registerButton;
 	private Button authButton;
+	private CheckBox checkBox;
+
+	private Preferences preferences;
+	private boolean autoAuth = false;
+
 
 	AuthStage(ClientController clientController)
 	{
@@ -29,6 +41,8 @@ public class AuthStage extends ViewStage
 	@Override
 	public void onStart(Stage stage)
 	{
+		preferences = Preferences.userNodeForPackage(AuthStage.class);
+
 		Text loginText = new Text("Login:");
 		loginTextField = new TextField();
 		Text passwordText = new Text("Password:");
@@ -38,13 +52,12 @@ public class AuthStage extends ViewStage
 
 		progressIndicator = new ProgressIndicator();
 
-		loginTextField.setText("admin");
-		passwordTextField.setText("123");
-
 		HBox hBox = new HBox(registerButton, authButton);
 		hBox.setSpacing(15);
 
-		VBox vBox = new VBox(loginText, loginTextField, passwordText, passwordTextField, hBox, progressIndicator);
+		checkBox = new CheckBox("Remember me");
+
+		VBox vBox = new VBox(loginText, loginTextField, passwordText, passwordTextField, hBox, checkBox, progressIndicator);
 		vBox.setMaxWidth(250);
 		vBox.setFillWidth(false);
 		vBox.setSpacing(10);
@@ -65,6 +78,19 @@ public class AuthStage extends ViewStage
 
 		setLoading(false);
 
+		if (preferences.getBoolean(PREF_REMEMBER, false))
+		{
+			checkBox.setSelected(true);
+			String login = preferences.get(PREF_LOGIN, "");
+			String password = preferences.get(PREF_PASSWORD, "");
+
+			loginTextField.setText(login);
+			passwordTextField.setText(password);
+
+			if (autoAuth)
+				authButton.fire();
+		}
+
 		if (stage.getScene() != null)
 			stage.getScene().setRoot(root);
 		else
@@ -73,6 +99,11 @@ public class AuthStage extends ViewStage
 		stage.setMinWidth(960);
 		stage.centerOnScreen();
 		stage.show();
+	}
+
+	public void setAutoAuth(boolean autoAuth)
+	{
+		this.autoAuth = autoAuth;
 	}
 
 	@Override
@@ -85,6 +116,12 @@ public class AuthStage extends ViewStage
 	public void onAuth(RequestStatus requestStatus)
 	{
 		setLoading(false);
+		if (requestStatus.isOk())
+		{
+			preferences.putBoolean(PREF_REMEMBER, checkBox.isSelected());
+			preferences.put(PREF_LOGIN, checkBox.isSelected() ? loginTextField.getText() : "");
+			preferences.put(PREF_PASSWORD, checkBox.isSelected() ? passwordTextField.getText() : "");
+		}
 	}
 
 	private void setLoading(boolean on)
