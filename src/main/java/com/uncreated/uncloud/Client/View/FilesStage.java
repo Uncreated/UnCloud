@@ -13,10 +13,13 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -30,19 +33,23 @@ public class FilesStage extends ViewStage
 {
 	private static final String ICON_FOLDER = "src/main/resources/icons/";
 	private static final String[] ICONS = {
-			"addFile.png",
-			"clientFile.png",
-			"clientFolder.png",
-			"clientServerFile.png",
-			"clientServerFolder.png",
 			"createFolder.png",
-			"deleteClient.png",
-			"deleteServer.png",
+			"addFile.png",
 			"download.png",
 			"upload.png",
+			"deleteClient.png",
+			"deleteServer.png",
+			"backFolder.png",
+			"clientFile.png",
+			"clientFolder.png",
 			"serverFile.png",
 			"serverFolder.png",
+			"clientServerFile.png",
+			"clientServerFolder.png",
 			"logout.png"};
+
+	private static DropShadow grayShadow = new DropShadow(20, Color.GRAY);
+	private static DropShadow blueShadow = new DropShadow(20, Color.BLUE);
 
 	private BorderPane rightPane;
 	private VBox leftPane;
@@ -59,6 +66,7 @@ public class FilesStage extends ViewStage
 
 	private FNode selectedFNode;
 	private FolderNode curFolder;
+	private ToggleButton selectedButton;
 
 	FilesStage(ClientController clientController)
 	{
@@ -87,6 +95,19 @@ public class FilesStage extends ViewStage
 		imageView.imageProperty()
 				.bind(Bindings.when(button.selectedProperty()).then(image).otherwise(image));
 
+		button.addEventHandler(MouseEvent.MOUSE_ENTERED,
+				event ->
+				{
+					if (selectedButton == null || selectedButton != button)
+						button.setEffect(grayShadow);
+				});
+
+		button.addEventHandler(MouseEvent.MOUSE_EXITED,
+				event ->
+				{
+					if (selectedButton == null || selectedButton != button)
+						button.setEffect(null);
+				});
 		return button;
 	}
 
@@ -119,10 +140,20 @@ public class FilesStage extends ViewStage
 		filesPane.setSpacing(10);
 		if (folderNode.getParentFolder() != null)
 		{
-			ToggleButton backButton = customButton("../" + folderNode.getName(), images.get("folder.png"));
+			ToggleButton backButton = customButton(folderNode.getName(), images.get("backFolder.png"));
 			backButton.setOnMouseClicked(event ->
 			{
-				showFolder(folderNode.getParentFolder());
+				if (selectedButton != null && selectedButton == backButton)
+					showFolder(folderNode.getParentFolder());
+				else
+				{
+					if (selectedButton != null)
+						selectedButton.setEffect(null);
+
+					selectFNode(null);
+					backButton.setEffect(blueShadow);
+					selectedButton = backButton;
+				}
 			});
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(backButton);
@@ -137,13 +168,7 @@ public class FilesStage extends ViewStage
 			else if (folder.isOnServer())
 				image = images.get("serverFolder.png");
 			ToggleButton button = customButton(folder.getName(), image);
-			button.setOnMouseClicked(event ->
-			{
-				if (selectedFNode == folder)
-					showFolder(folder);
-				else
-					selectFNode(folder);
-			});
+			setButtonSelectEvent(button, folder);
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
 		}
@@ -157,15 +182,32 @@ public class FilesStage extends ViewStage
 			else if (file.isOnServer())
 				image = images.get("serverFile.png");
 			ToggleButton button = customButton(file.getName(), image);
-			button.setOnMouseClicked(event ->
-			{
-				selectFNode(file);
-			});
+			setButtonSelectEvent(button, file);
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
 		}
 		rightPane.getChildren().clear();
 		rightPane.setCenter(filesPane);
+	}
+
+	private void setButtonSelectEvent(ToggleButton button, FNode fNode)
+	{
+		button.setOnMouseClicked(event ->
+		{
+			if (selectedFNode == fNode)
+			{
+				if (fNode instanceof FolderNode)
+					showFolder((FolderNode) fNode);
+			} else
+			{
+				selectFNode(fNode);
+				if (selectedButton != null)
+					selectedButton.setEffect(null);
+
+				button.setEffect(blueShadow);
+				selectedButton = button;
+			}
+		});
 	}
 
 	@Override
