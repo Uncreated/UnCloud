@@ -4,6 +4,7 @@ import com.uncreated.uncloud.Client.ClientController;
 import com.uncreated.uncloud.Client.RequestStatus;
 import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 
 import static com.uncreated.uncloud.Client.View.ViewStage.news;
@@ -23,9 +24,7 @@ public class ClientApp extends Application implements ClientView
 
 	public ClientApp()
 	{
-		ClientController clientController = new ClientController(this);
-		authStage = new AuthStage(clientController);
-		filesStage = new FilesStage(clientController);
+		reload();
 	}
 
 	@Override
@@ -66,5 +65,27 @@ public class ClientApp extends Application implements ClientView
 		stage = primaryStage;
 		curStage = authStage;
 		authStage.onStart(stage);
+	}
+
+	@Override
+	public void onLogout()
+	{
+		reload();
+		try
+		{
+			start(stage);
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+			news(false, e.getMessage());
+			Platform.exit();
+		}
+	}
+
+	private void reload()
+	{
+		ClientController clientController = new ClientController(this);
+		authStage = new AuthStage(clientController);
+		filesStage = new FilesStage(clientController);
 	}
 }

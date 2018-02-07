@@ -65,7 +65,10 @@ public class AuthStage extends ViewStage
 
 		setLoading(false);
 
-		stage.setScene(new Scene(root, 1, 1));
+		if (stage.getScene() != null)
+			stage.getScene().setRoot(root);
+		else
+			stage.setScene(new Scene(root, 1, 1));
 		stage.setMinHeight(540);
 		stage.setMinWidth(960);
 		stage.centerOnScreen();

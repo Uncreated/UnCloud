@@ -22,7 +22,7 @@ public abstract class ViewStage implements ClientView
 	{
 		Alert alert = new Alert(good ? Alert.AlertType.INFORMATION : Alert.AlertType.ERROR, message, ButtonType.OK);
 		alert.setTitle(good ? "Successfully" : "Fail");
-		alert.show();
+		alert.showAndWait();
 	}
 
 	@Override
@@ -45,6 +45,12 @@ public abstract class ViewStage implements ClientView
 
 	@Override
 	public void onUpdateFiles(FolderNode mergedFiles)
+	{
+
+	}
+
+	@Override
+	public void onLogout()
 	{
 
 	}

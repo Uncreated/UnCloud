@@ -28,7 +28,7 @@ import java.util.Optional;
 
 public class FilesStage extends ViewStage
 {
-	private static final String ICON_FOLDER = "C:/UnCloud/Icons/";
+	private static final String ICON_FOLDER = "src/main/resources/icons/";
 	private static final String[] ICONS = {
 			"addFile.png",
 			"clientFile.png",
@@ -38,12 +38,11 @@ public class FilesStage extends ViewStage
 			"createFolder.png",
 			"deleteClient.png",
 			"deleteServer.png",
-			"file.png",
-			"folder.png",
 			"download.png",
 			"upload.png",
 			"serverFile.png",
-			"serverFolder.png"};
+			"serverFolder.png",
+			"logout.png"};
 
 	private BorderPane rightPane;
 	private VBox leftPane;
@@ -54,6 +53,7 @@ public class FilesStage extends ViewStage
 	private ToggleButton uploadButton;
 	private ToggleButton deleteClientButton;
 	private ToggleButton deleteServerButton;
+	private ToggleButton logoutButton;
 
 	private HashMap<String, Image> images;
 
@@ -65,15 +65,23 @@ public class FilesStage extends ViewStage
 		super(clientController);
 
 		images = new HashMap<>();
-		for (String fileName : ICONS)
-			images.put(fileName, loadImage(fileName));
+		try
+		{
+			for (String fileName : ICONS)
+				images.put(fileName, loadImage(fileName));
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+			news(false, "Can not to read interface components. " + e.getMessage());
+			Platform.exit();
+		}
 	}
 
 	private ToggleButton customButton(String title, Image image)
 	{
 		ToggleButton button = new ToggleButton(title);
-		button.setPrefHeight(100);
 		button.setStyle("-fx-font: 22 arial; -fx-background-color: transparent;");
+		//button.setMaxSize(100, 50);
 		ImageView imageView = new ImageView();
 		button.setGraphic(imageView);
 		imageView.imageProperty()
@@ -182,6 +190,7 @@ public class FilesStage extends ViewStage
 	{
 		BorderPane root = new BorderPane();
 
+		BorderPane leftBotderPane = new BorderPane();
 		leftPane = new VBox();
 		ScrollPane scrollPane = new ScrollPane();
 		scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -192,7 +201,15 @@ public class FilesStage extends ViewStage
 
 		scrollPane.setContent(rightPane);
 
-		root.setLeft(leftPane);
+		logoutButton = customButton(null, images.get("logout.png"));
+		logoutButton.setOnAction(event ->
+		{
+			clientController.logout();
+		});
+
+		leftBotderPane.setTop(leftPane);
+		leftBotderPane.setBottom(logoutButton);
+		root.setLeft(leftBotderPane);
 		root.setCenter(scrollPane);
 
 		//buttons
@@ -225,7 +242,7 @@ public class FilesStage extends ViewStage
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setTitle("Select file for upload to server");
 			File file = fileChooser.showOpenDialog(stage);
-			if(file!=null)
+			if (file != null)
 				clientController.copyFile(file, curFolder);
 		});
 
@@ -265,21 +282,12 @@ public class FilesStage extends ViewStage
 		stage.getScene().setRoot(root);
 	}
 
-	private Image loadImage(String fileName)
+	private Image loadImage(String fileName) throws IOException
 	{
-		try
-		{
-			File file = new File(ICON_FOLDER + fileName);
-			FileInputStream inputStream = new FileInputStream(file);
-			Image image = new Image(new FileInputStream(file));
-			inputStream.close();
-			return image;
-		} catch (IOException e)
-		{
-			e.printStackTrace();
-			news(false, "Can not to read interface components");
-			Platform.exit();
-			return null;
-		}
+		File file = new File(ICON_FOLDER + fileName);
+		FileInputStream inputStream = new FileInputStream(file);
+		Image image = new Image(new FileInputStream(file));
+		inputStream.close();
+		return image;
 	}
 }

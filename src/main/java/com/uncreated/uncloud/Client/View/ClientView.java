@@ -12,4 +12,6 @@ public interface ClientView
 	void onUpdateFiles(FolderNode mergedFiles);
 
 	void onFailRequest(RequestStatus requestStatus);
+
+	void onLogout();
 }

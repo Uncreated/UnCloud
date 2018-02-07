@@ -38,7 +38,7 @@ public class ClientController
 		runThread(() ->
 		{
 			RequestStatus requestStatus = requestHandler.register(login, password);
-			Platform.runLater(() ->
+			call(() ->
 			{
 				clientView.onRegister(requestStatus);
 			});
@@ -68,7 +68,7 @@ public class ClientController
 		runThread(() ->
 		{
 			RequestStatus requestStatus = requestHandler.auth(login, password);
-			Platform.runLater(() ->
+			call(() ->
 			{
 				clientView.onAuth(requestStatus);
 			});
@@ -272,12 +272,24 @@ public class ClientController
 			requestStatus = getMergedFolder();
 
 		RequestStatus reqStatus = requestStatus;
-		Platform.runLater(() ->
+		call(() ->
 		{
 			if (reqStatus.isOk())
 				clientView.onUpdateFiles(mergedFolder);
 			else
 				clientView.onFailRequest(reqStatus);
 		});
+	}
+
+	private void call(Runnable runnable)
+	{
+		if (clientView != null)
+			Platform.runLater(runnable);
+	}
+
+	public void logout()
+	{
+		this.clientView.onLogout();
+		this.clientView = null;
 	}
 }
