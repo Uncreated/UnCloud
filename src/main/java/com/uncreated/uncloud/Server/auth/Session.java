@@ -1,9 +1,8 @@
 package com.uncreated.uncloud.Server.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.uncreated.uncloud.Server.Answer;
 
-public class Session implements Answer
+public class Session
 {
 	private String accessToken;
 	private Long expiryDate;

@@ -34,7 +34,7 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/register", method = POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<Answer> register(HttpEntity<User> httpEntity)
+	public ResponseEntity register(HttpEntity<User> httpEntity)
 	{
 		try
 		{
@@ -47,7 +47,7 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/auth", method = POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<Answer> auth(HttpEntity<User> httpEntity)
+	public ResponseEntity auth(HttpEntity<User> httpEntity)
 	{
 		try
 		{
@@ -91,7 +91,7 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/file", method = RequestMethod.DELETE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<Answer> deleteFile(HttpEntity httpEntity,
+	public ResponseEntity deleteFile(HttpEntity httpEntity,
 											 @RequestParam(value = "path") String path)
 	{
 		try
@@ -106,7 +106,7 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/file", method = POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<Answer> postFile(HttpEntity<FileTransfer> httpEntity)
+	public ResponseEntity postFile(HttpEntity<FileTransfer> httpEntity)
 	{
 		try
 		{
@@ -120,7 +120,7 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/folder", method = POST, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity<Answer> postFolder(HttpEntity httpEntity,
+	public ResponseEntity postFolder(HttpEntity httpEntity,
 											 @RequestParam(value = "path") String path)
 	{
 		try

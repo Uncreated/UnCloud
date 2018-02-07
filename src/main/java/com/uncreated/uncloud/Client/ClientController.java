@@ -89,6 +89,7 @@ public class ClientController
 			try
 			{
 				File dest = new File(ROOT_FOLDER + login + curNode.getFilePath() + source.getName());
+				dest.getParentFile().mkdirs();
 				Files.copy(source.toPath(), dest.toPath());
 				requestStatus = new RequestStatus(true);
 			} catch (IOException e)

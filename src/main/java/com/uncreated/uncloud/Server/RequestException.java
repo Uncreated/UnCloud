@@ -32,7 +32,7 @@ public class RequestException extends Exception
 		return httpCode;
 	}
 
-	public class ErrorMsg implements Answer
+	public class ErrorMsg
 	{
 		String msg;
 

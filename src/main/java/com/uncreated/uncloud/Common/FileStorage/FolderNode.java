@@ -154,4 +154,43 @@ public class FolderNode extends FNode
 		}
 		return builder.toString();
 	}
+
+	public boolean isFilesOnClient(boolean onlyAll)
+	{
+		if (isOnClient() != onlyAll)
+			return isOnClient();
+
+		for (FileNode fileNode : files)
+			if (fileNode.isOnClient() != onlyAll)
+				return fileNode.isOnClient();
+
+		for (FolderNode folderNode : folders)
+		{
+			boolean res = folderNode.isFilesOnClient(onlyAll);
+			if (res != onlyAll)
+				return res;
+		}
+
+		return onlyAll;
+	}
+
+
+	public boolean isFilesOnServer(boolean onlyAll)
+	{
+		if (isOnServer() != onlyAll)
+			return isOnServer();
+
+		for (FileNode fileNode : files)
+			if (fileNode.isOnServer() != onlyAll)
+				return fileNode.isOnServer();
+
+		for (FolderNode folderNode : folders)
+		{
+			boolean res = folderNode.isFilesOnServer(onlyAll);
+			if (res != onlyAll)
+				return res;
+		}
+
+		return onlyAll;
+	}
 }

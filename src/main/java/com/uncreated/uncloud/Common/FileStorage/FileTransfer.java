@@ -1,12 +1,10 @@
 package com.uncreated.uncloud.Common.FileStorage;
 
-import com.uncreated.uncloud.Server.Answer;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
-public class FileTransfer implements Answer
+public class FileTransfer
 {
 	private static final int PART_SIZE = 10485760;//10mb
 

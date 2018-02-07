@@ -89,7 +89,8 @@ public class FilesStage extends ViewStage
 	{
 		ToggleButton button = new ToggleButton(title);
 		button.setStyle("-fx-font: 22 arial; -fx-background-color: transparent;");
-		//button.setMaxSize(100, 50);
+		//button.setPrefWidth(80);
+		button.setAlignment(Pos.TOP_LEFT);
 		ImageView imageView = new ImageView();
 		button.setGraphic(imageView);
 		imageView.imageProperty()
@@ -118,15 +119,31 @@ public class FilesStage extends ViewStage
 		leftPane.getChildren().addAll(createFolderButton, addFileButton);
 		if (fNode != null)
 		{
-			if (!fNode.isOnClient())
-				leftPane.getChildren().add(downloadButton);
-			if (!fNode.isOnServer())
-				leftPane.getChildren().add(uploadButton);
+			if (fNode instanceof FileNode)
+			{
+				if (!fNode.isOnClient())
+					leftPane.getChildren().add(downloadButton);
+				if (!fNode.isOnServer())
+					leftPane.getChildren().add(uploadButton);
 
-			if (fNode.isOnClient())
-				leftPane.getChildren().add(deleteClientButton);
-			if (fNode.isOnServer())
-				leftPane.getChildren().add(deleteServerButton);
+				if (fNode.isOnClient())
+					leftPane.getChildren().add(deleteClientButton);
+				if (fNode.isOnServer())
+					leftPane.getChildren().add(deleteServerButton);
+			} else if (fNode instanceof FolderNode)
+			{
+				FolderNode folderNode = (FolderNode) fNode;
+				if (!folderNode.isFilesOnClient(true))
+					leftPane.getChildren().add(downloadButton);
+
+				if (!folderNode.isFilesOnServer(true))
+					leftPane.getChildren().add(uploadButton);
+
+				if (folderNode.isFilesOnClient(false))
+					leftPane.getChildren().add(deleteClientButton);
+				if (folderNode.isFilesOnServer(false))
+					leftPane.getChildren().add(deleteServerButton);
+			}
 		}
 	}
 
@@ -141,6 +158,7 @@ public class FilesStage extends ViewStage
 		if (folderNode.getParentFolder() != null)
 		{
 			ToggleButton backButton = customButton(folderNode.getName(), images.get("backFolder.png"));
+			backButton.setAlignment(Pos.TOP_LEFT);
 			backButton.setOnMouseClicked(event ->
 			{
 				if (selectedButton != null && selectedButton == backButton)
@@ -155,7 +173,6 @@ public class FilesStage extends ViewStage
 					selectedButton = backButton;
 				}
 			});
-			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(backButton);
 		}
 		for (FolderNode folder : folderNode.getFolders())
