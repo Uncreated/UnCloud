@@ -48,8 +48,7 @@ public class Storage
 		{
 			FileUtils.deleteDirectory(file);
 			return true;
-		}
-		else
+		} else
 			return file.delete();
 	}
 
@@ -57,7 +56,11 @@ public class Storage
 	{
 		File file = new File(rootFolder + login + fileTransfer.getPath());
 		if (!file.exists())
-			file.createNewFile();
+		{
+			file.getParentFile().mkdirs();
+			if (!file.createNewFile())
+				throw new IOException("Can not create file " + file.getPath());
+		}
 
 		fileTransfer.write(file);
 	}

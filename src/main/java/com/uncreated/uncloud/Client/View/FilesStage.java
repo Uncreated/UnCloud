@@ -57,11 +57,10 @@ public class FilesStage extends ViewStage
 
 	private HashMap<String, Image> images;
 
-	private FolderNode rootFolder;
 	private FNode selectedFNode;
 	private FolderNode curFolder;
 
-	public FilesStage(ClientController clientController)
+	FilesStage(ClientController clientController)
 	{
 		super(clientController);
 
@@ -162,38 +161,14 @@ public class FilesStage extends ViewStage
 	}
 
 	@Override
-	public void onGetFileResponse(RequestStatus<FNode> requestStatus)
-	{
-		if (!requestStatus.isOk())
-			news(false, requestStatus.getMsg());
-		else
-			news(true, "File downloaded");
-	}
-
-	@Override
-	public void onSetFileResponse(RequestStatus<FileNode> requestStatus)
-	{
-		if (!requestStatus.isOk())
-			news(false, requestStatus.getMsg());
-		else
-		{
-			if (curFolder == requestStatus.getData().getParentFolder())
-				showFolder(curFolder);//reload
-
-			news(true, "File uploaded to server");
-		}
-	}
-
-	@Override
 	public void onUpdateFiles(FolderNode mergedFiles)
 	{
 		String savedPath = "";
 		if (curFolder != null)
-			savedPath += curFolder.getFilePath().getName();
+			savedPath += curFolder.getFilePath();
 		savedPath += "/";
 
-		rootFolder = mergedFiles;
-		showFolder(rootFolder.goTo(savedPath));
+		showFolder(mergedFiles.goTo(savedPath));
 	}
 
 	@Override

@@ -11,7 +11,6 @@ import java.nio.file.Files;
 
 public class ClientController
 {
-	private static final int TRY_COUNT = 3;
 	private static final String ROOT_FOLDER = "C:/UnCloud/Client/";
 
 	private Storage storage;
@@ -68,21 +67,17 @@ public class ClientController
 	{
 		runThread(() ->
 		{
-			RequestStatus<FolderNode> requestStatus = requestHandler.auth(login, password);
+			RequestStatus requestStatus = requestHandler.auth(login, password);
+			Platform.runLater(() ->
+			{
+				clientView.onAuth(requestStatus);
+			});
+
 			if (requestStatus.isOk())
 			{
 				this.login = login;
-				requestStatus = getMergedFolder();
+				folderUpdateRequestResult(requestStatus);
 			}
-			final RequestStatus<FolderNode> reqStatus = requestStatus;
-			Platform.runLater(() ->
-			{
-				clientView.onAuth(reqStatus);
-				if (reqStatus.isOk())
-				{
-					clientView.onUpdateFiles(mergedFolder);
-				}
-			});
 		});
 	}
 
@@ -93,7 +88,7 @@ public class ClientController
 			RequestStatus requestStatus;
 			try
 			{
-				File dest = new File(ROOT_FOLDER + login + curNode.getFilePath().getName() + source.getName());
+				File dest = new File(ROOT_FOLDER + login + curNode.getFilePath() + source.getName());
 				Files.copy(source.toPath(), dest.toPath());
 				requestStatus = new RequestStatus(true);
 			} catch (IOException e)
@@ -108,11 +103,11 @@ public class ClientController
 	private RequestStatus downloadFile(FileNode fileNode)
 	{
 		RequestStatus requestStatus = null;
-		FNode fNode = fileNode.getFilePath();
+		String path = fileNode.getFilePath();
 		int parts = fileNode.getParts();
 		for (int i = 0; i < parts; i++)
 		{
-			RequestStatus<FileTransfer> requestStatusPart = requestHandler.downloadFilePart(fNode, i);
+			RequestStatus<FileTransfer> requestStatusPart = requestHandler.downloadFilePart(path, i);
 			if (requestStatusPart.isOk())
 			{
 				try
@@ -136,15 +131,10 @@ public class ClientController
 	{
 		RequestStatus requestStatus = null;
 		if (!folderNode.isOnClient())
-		{
-			FNode fNode = folderNode.getFilePath();
-			new File(ROOT_FOLDER + login + fNode.getName()).mkdirs();
-		}
+			new File(ROOT_FOLDER + login + folderNode.getFilePath()).mkdirs();
 		for (FolderNode folder : folderNode.getFolders())
 		{
 			requestStatus = downloadFolder(folder);
-			for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
-				requestStatus = downloadFolder(folder);
 			if (!requestStatus.isOk())
 				return requestStatus;
 		}
@@ -154,8 +144,6 @@ public class ClientController
 			if (!fileNode.isOnClient())
 			{
 				requestStatus = downloadFile(fileNode);
-				for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
-					requestStatus = downloadFile(fileNode);
 				if (!requestStatus.isOk())
 					return requestStatus;
 			}
@@ -182,7 +170,7 @@ public class ClientController
 	{
 		RequestStatus requestStatus = null;
 
-		String path = fileNode.getFilePath().getName();
+		String path = fileNode.getFilePath();
 		int szi = fileNode.getParts();
 		File file = new File(ROOT_FOLDER + login + path);
 		for (int i = 0; i < szi; i++)
@@ -216,8 +204,6 @@ public class ClientController
 		for (FolderNode folder : folderNode.getFolders())
 		{
 			requestStatus = uploadFolder(folder);
-			for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
-				requestStatus = uploadFolder(folder);
 			if (!requestStatus.isOk())
 				return requestStatus;
 		}
@@ -227,8 +213,6 @@ public class ClientController
 			if (!fileNode.isOnServer())
 			{
 				requestStatus = uploadFile(fileNode);
-				for (int i = 0; i < TRY_COUNT && !requestStatus.isOk(); i++)
-					requestStatus = uploadFile(fileNode);
 				if (!requestStatus.isOk())
 					return requestStatus;
 			}
@@ -256,7 +240,7 @@ public class ClientController
 		RequestStatus requestStatus;
 		try
 		{
-			storage.removeFile(login, fNode.getFilePath().getName());
+			storage.removeFile(login, fNode.getFilePath());
 			requestStatus = new RequestStatus(true);
 		} catch (IOException e)
 		{
@@ -268,10 +252,9 @@ public class ClientController
 
 	public void removeFileFromServer(FNode fNode)
 	{
-		FNode fNodePack = fNode.getFilePath();
 		runThread(() ->
 		{
-			folderUpdateRequestResult(requestHandler.removeFile(fNodePack));
+			folderUpdateRequestResult(requestHandler.removeFile(fNode.getFilePath()));
 		});
 	}
 
@@ -279,10 +262,7 @@ public class ClientController
 	{
 		runThread(() ->
 		{
-			FNode fNode = new FNode(curFolder.getFilePath().getName() + name);
-			RequestStatus requestStatus = requestHandler.createFolder(fNode);
-
-			folderUpdateRequestResult(requestStatus);
+			folderUpdateRequestResult(requestHandler.createFolder(curFolder.getFilePath() + name));
 		});
 	}
 

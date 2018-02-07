@@ -22,7 +22,7 @@ public class AuthService
 		usersRepository.save(user);
 	}
 
-	public String getLogin(String accessToken) throws RequestException
+	private String getLogin(String accessToken) throws RequestException
 	{
 		Session session = sessions.get(accessToken);
 		if (session != null) return session.getLogin();
@@ -62,7 +62,7 @@ public class AuthService
 			if (user.password.equals(password))
 			{
 				Session session = generateAccessToken(login);
-				sessions.put(session.accessToken, session);
+				sessions.put(session.getAccessToken(), session);
 				return session;
 			}
 

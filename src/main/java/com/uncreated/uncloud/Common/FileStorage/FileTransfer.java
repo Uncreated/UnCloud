@@ -8,11 +8,11 @@ import java.io.RandomAccessFile;
 
 public class FileTransfer implements Answer
 {
-	public static final int PART_SIZE = 10485760;//10mb
+	private static final int PART_SIZE = 10485760;//10mb
 
-	String path;
-	Integer part;
-	byte[] data;
+	private String path;
+	private Integer part;
+	private byte[] data;
 
 	public FileTransfer()
 	{

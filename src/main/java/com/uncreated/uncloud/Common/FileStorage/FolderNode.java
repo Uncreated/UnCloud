@@ -28,13 +28,14 @@ public class FolderNode extends FNode
 			throw new FileNotFoundException();
 
 		File[] subFiles = rootFolder.listFiles();
-		for (File file : subFiles)
-		{
-			if (file.isDirectory())
-				folders.add(new FolderNode(file));
-			else
-				files.add(new FileNode(file));
-		}
+		if (subFiles != null)
+			for (File file : subFiles)
+			{
+				if (file.isDirectory())
+					folders.add(new FolderNode(file));
+				else
+					files.add(new FileNode(file));
+			}
 	}
 
 	public FolderNode(FolderNode clientFiles, FolderNode serverFiles)//merged folder
@@ -102,16 +103,6 @@ public class FolderNode extends FNode
 			folderNode.setLoc(client, server);
 	}
 
-	public void add(FolderNode folder)
-	{
-		folders.add(folder);
-	}
-
-	public void add(FileNode file)
-	{
-		files.add(file);
-	}
-
 	public ArrayList<FolderNode> getFolders()
 	{
 		return folders;
@@ -122,7 +113,7 @@ public class FolderNode extends FNode
 		return files;
 	}
 
-	public void initRelations()
+	private void initRelations()
 	{
 		for (FileNode fileNode : files)
 			fileNode.parentFolder = this;
@@ -150,7 +141,7 @@ public class FolderNode extends FNode
 	}
 
 	@Override
-	public FNode getFilePath()
+	public String getFilePath()
 	{
 		StringBuilder builder = new StringBuilder("/");
 		FolderNode folder = this;
@@ -161,6 +152,6 @@ public class FolderNode extends FNode
 			builder.insert(0, "/");
 			folder = parent;
 		}
-		return new FNode(builder.toString());
+		return builder.toString();
 	}
 }

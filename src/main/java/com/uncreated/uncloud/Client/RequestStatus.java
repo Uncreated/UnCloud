@@ -6,24 +6,24 @@ public class RequestStatus<T>
 	private String msg;
 	private T data;
 
-	public RequestStatus(boolean ok, String msg)
+	RequestStatus(boolean ok, String msg)
 	{
 		this.ok = ok;
 		this.msg = msg;
 	}
 
-	public T getData()
+	T getData()
 	{
 		return data;
 	}
 
-	public RequestStatus<T> setData(T data)
+	RequestStatus<T> setData(T data)
 	{
 		this.data = data;
 		return this;
 	}
 
-	public RequestStatus(boolean ok)
+	RequestStatus(boolean ok)
 	{
 		this(ok, "");
 	}

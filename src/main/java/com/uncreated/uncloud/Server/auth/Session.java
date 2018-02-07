@@ -5,10 +5,10 @@ import com.uncreated.uncloud.Server.Answer;
 
 public class Session implements Answer
 {
-	String accessToken;
-	Long expiryDate;
+	private String accessToken;
+	private Long expiryDate;
 
-	String login;
+	private String login;
 
 	public Session()
 	{

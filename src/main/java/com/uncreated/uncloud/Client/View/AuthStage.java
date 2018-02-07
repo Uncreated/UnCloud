@@ -21,7 +21,7 @@ public class AuthStage extends ViewStage
 	private Button registerButton;
 	private Button authButton;
 
-	public AuthStage(ClientController clientController)
+	AuthStage(ClientController clientController)
 	{
 		super(clientController);
 	}

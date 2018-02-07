@@ -22,12 +22,12 @@ public class RequestException extends Exception
 		System.out.println("RequestException: CODE=" + httpCode + "\n" + errorMsg);
 	}
 
-	public ErrorMsg getErrorMsg()
+	ErrorMsg getErrorMsg()
 	{
 		return errorMsg;
 	}
 
-	public HttpStatus getHttpCode()
+	HttpStatus getHttpCode()
 	{
 		return httpCode;
 	}
@@ -40,7 +40,7 @@ public class RequestException extends Exception
 		{
 		}
 
-		public ErrorMsg(String msg)
+		ErrorMsg(String msg)
 		{
 			this.msg = msg;
 		}

@@ -2,7 +2,7 @@ package com.uncreated.uncloud.Common.FileStorage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public class FNode
+public abstract class FNode
 {
 	protected String name;
 
@@ -31,11 +31,6 @@ public class FNode
 		return parentFolder;
 	}
 
-	public void setParentFolder(FolderNode parentFolder)
-	{
-		this.parentFolder = parentFolder;
-	}
-
 	@JsonIgnore
 	public boolean isOnServer()
 	{
@@ -55,7 +50,7 @@ public class FNode
 	}
 
 	@JsonIgnore
-	public FNode getFilePath()
+	public String getFilePath()
 	{
 		StringBuilder builder = new StringBuilder(name);
 		builder.insert(0, "/");
@@ -66,8 +61,6 @@ public class FNode
 			builder.insert(0, "/");
 			parent = parent.getParentFolder();
 		}
-		/*if (this instanceof FolderNode)
-			builder.append("/");*/
-		return new FNode(builder.toString());
+		return builder.toString();
 	}
 }

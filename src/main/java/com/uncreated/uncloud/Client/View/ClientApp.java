@@ -2,8 +2,6 @@ package com.uncreated.uncloud.Client.View;
 
 import com.uncreated.uncloud.Client.ClientController;
 import com.uncreated.uncloud.Client.RequestStatus;
-import com.uncreated.uncloud.Common.FileStorage.FNode;
-import com.uncreated.uncloud.Common.FileStorage.FileNode;
 import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import javafx.application.Application;
 import javafx.stage.Stage;
@@ -12,8 +10,6 @@ import static com.uncreated.uncloud.Client.View.ViewStage.news;
 
 public class ClientApp extends Application implements ClientView
 {
-	private ClientController clientController;
-
 	private Stage stage;
 
 	private AuthStage authStage;
@@ -27,7 +23,7 @@ public class ClientApp extends Application implements ClientView
 
 	public ClientApp()
 	{
-		clientController = new ClientController(this);
+		ClientController clientController = new ClientController(this);
 		authStage = new AuthStage(clientController);
 		filesStage = new FilesStage(clientController);
 	}
@@ -51,7 +47,7 @@ public class ClientApp extends Application implements ClientView
 	}
 
 	@Override
-	public void onAuth(RequestStatus<FolderNode> requestStatus)
+	public void onAuth(RequestStatus requestStatus)
 	{
 		if (!requestStatus.isOk())
 		{
@@ -62,18 +58,6 @@ public class ClientApp extends Application implements ClientView
 			curStage = filesStage;
 			filesStage.onStart(stage);
 		}
-	}
-
-	@Override
-	public void onGetFileResponse(RequestStatus<FNode> requestStatus)
-	{
-		curStage.onGetFileResponse(requestStatus);
-	}
-
-	@Override
-	public void onSetFileResponse(RequestStatus<FileNode> requestStatus)
-	{
-		curStage.onSetFileResponse(requestStatus);
 	}
 
 	@Override
