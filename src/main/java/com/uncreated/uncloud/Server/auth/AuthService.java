@@ -4,6 +4,7 @@ import com.uncreated.uncloud.Server.RequestException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Random;
 
@@ -13,6 +14,42 @@ public class AuthService
 	private final Random rand = new Random();
 	private final UsersRepository usersRepository;
 	private HashMap<String, Session> sessions = new HashMap<>();
+
+	/*@Bean
+	public RedisConnectionFactory redisCF() {
+		JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();
+		jedisConnectionFactory.setHostName("5.187.1.87\n");
+		jedisConnectionFactory.setPort(6379);
+		jedisConnectionFactory.setPassword("NIXuU62JvuB00xzN2PgPtQVyglm9cQLN");
+		return jedisConnectionFactory;
+	}
+
+	@Bean
+	public RedisTemplate<String, User> redisTemplate() {
+		RedisTemplate<String, User> template = new RedisTemplate<>();
+		template.setConnectionFactory(redisCF());
+		return template;
+	}*/
+
+	/*@Bean
+	JedisConnectionFactory jedisConnectionFactory()
+	{
+		JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();
+
+		jedisConnectionFactory.setHostName("5.187.1.87");
+		jedisConnectionFactory.setPort(6379);
+		jedisConnectionFactory.setPassword("NIXuU62JvuB00xzN2PgPtQVyglm9cQLN");
+
+		return jedisConnectionFactory;
+	}
+
+	@Bean
+	public RedisTemplate<String, User> redisTemplate()
+	{
+		RedisTemplate<String, User> template = new RedisTemplate<>();
+		template.setConnectionFactory(jedisConnectionFactory());
+		return template;
+	}*/
 
 	public AuthService(UsersRepository usersRepository)
 	{
@@ -37,29 +74,26 @@ public class AuthService
 
 	private User getUser(String login)
 	{
-		Iterable<User> users = usersRepository.findAll();//bad idea
-		for (User user : users)
-			if (user.login.equals(login))
-				return user;
-
+		if (usersRepository.exists(login))
+			return usersRepository.findOne(login);
 		return null;
 	}
 
 	public void register(User newUser) throws RequestException
 	{
-		User user = getUser(newUser.login);
+		User user = getUser(newUser.getLogin());
 		if (user != null)
 			throw new RequestException("Login already exists");
 
 		usersRepository.save(newUser);
 	}
 
-	public Session login(String login, String password) throws RequestException
+	public Session login(String login, byte[] passwordHash) throws RequestException
 	{
 		User user = getUser(login);
 		if (user != null)
 		{
-			if (user.password.equals(password))
+			if (Arrays.equals(user.getPasswordHash(), passwordHash))
 			{
 				Session session = generateAccessToken(login);
 				sessions.put(session.getAccessToken(), session);

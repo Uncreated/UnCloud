@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import static org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
@@ -52,7 +51,7 @@ public class ServerController
 		try
 		{
 			User user = httpEntity.getBody();
-			Session session = authService.login(user.getLogin(), user.getPassword());
+			Session session = authService.login(user.getLogin(), user.getPasswordHash());
 			return ResponseEntity.status(HttpStatus.OK).body(session);
 		} catch (RequestException e)
 		{
@@ -92,7 +91,7 @@ public class ServerController
 
 	@RequestMapping(value = "/file", method = RequestMethod.DELETE, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity deleteFile(HttpEntity httpEntity,
-											 @RequestParam(value = "path") String path)
+									 @RequestParam(value = "path") String path)
 	{
 		try
 		{
@@ -121,7 +120,7 @@ public class ServerController
 
 	@RequestMapping(value = "/folder", method = POST, produces = APPLICATION_JSON_VALUE)
 	public ResponseEntity postFolder(HttpEntity httpEntity,
-											 @RequestParam(value = "path") String path)
+									 @RequestParam(value = "path") String path)
 	{
 		try
 		{
