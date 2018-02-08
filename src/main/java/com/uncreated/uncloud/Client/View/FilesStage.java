@@ -7,7 +7,6 @@ import com.uncreated.uncloud.Common.FileStorage.FileNode;
 import com.uncreated.uncloud.Common.FileStorage.FolderNode;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.ScrollPane;
@@ -16,10 +15,13 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -27,6 +29,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 public class FilesStage extends ViewStage
@@ -51,8 +54,9 @@ public class FilesStage extends ViewStage
 	private static DropShadow grayShadow = new DropShadow(20, Color.GRAY);
 	private static DropShadow blueShadow = new DropShadow(20, Color.BLUE);
 
-	private BorderPane rightPane;
-	private VBox leftPane;
+	private VBox controlPane;
+	private BorderPane rootRightPane;
+	private ScrollPane scrollFilesPane;
 
 	private ToggleButton createFolderButton;
 	private ToggleButton addFileButton;
@@ -115,34 +119,34 @@ public class FilesStage extends ViewStage
 	private void selectFNode(FNode fNode)
 	{
 		selectedFNode = fNode;
-		leftPane.getChildren().clear();
-		leftPane.getChildren().addAll(createFolderButton, addFileButton);
+		controlPane.getChildren().clear();
+		controlPane.getChildren().addAll(createFolderButton, addFileButton);
 		if (fNode != null)
 		{
 			if (fNode instanceof FileNode)
 			{
 				if (!fNode.isOnClient())
-					leftPane.getChildren().add(downloadButton);
+					controlPane.getChildren().add(downloadButton);
 				if (!fNode.isOnServer())
-					leftPane.getChildren().add(uploadButton);
+					controlPane.getChildren().add(uploadButton);
 
 				if (fNode.isOnClient())
-					leftPane.getChildren().add(deleteClientButton);
+					controlPane.getChildren().add(deleteClientButton);
 				if (fNode.isOnServer())
-					leftPane.getChildren().add(deleteServerButton);
+					controlPane.getChildren().add(deleteServerButton);
 			} else if (fNode instanceof FolderNode)
 			{
 				FolderNode folderNode = (FolderNode) fNode;
 				if (!folderNode.isFilesOnClient(true))
-					leftPane.getChildren().add(downloadButton);
+					controlPane.getChildren().add(downloadButton);
 
 				if (!folderNode.isFilesOnServer(true))
-					leftPane.getChildren().add(uploadButton);
+					controlPane.getChildren().add(uploadButton);
 
 				if (folderNode.isFilesOnClient(false))
-					leftPane.getChildren().add(deleteClientButton);
+					controlPane.getChildren().add(deleteClientButton);
 				if (folderNode.isFilesOnServer(false))
-					leftPane.getChildren().add(deleteServerButton);
+					controlPane.getChildren().add(deleteServerButton);
 			}
 		}
 	}
@@ -153,8 +157,9 @@ public class FilesStage extends ViewStage
 		selectFNode(null);
 		VBox filesPane = new VBox();
 
-		filesPane.setPadding(new Insets(10, 0, 10, 10));
+		//filesPane.setPadding(new Insets(10, 0, 10, 10));
 		filesPane.setSpacing(10);
+		folderNode.sort();
 		if (folderNode.getParentFolder() != null)
 		{
 			ToggleButton backButton = customButton(folderNode.getName(), images.get("backFolder.png"));
@@ -203,8 +208,11 @@ public class FilesStage extends ViewStage
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
 		}
-		rightPane.getChildren().clear();
-		rightPane.setCenter(filesPane);
+
+		scrollFilesPane.setContent(filesPane);
+
+		rootRightPane.getChildren().clear();
+		rootRightPane.setCenter(scrollFilesPane);
 	}
 
 	private void setButtonSelectEvent(ToggleButton button, FNode fNode)
@@ -249,16 +257,19 @@ public class FilesStage extends ViewStage
 	{
 		BorderPane root = new BorderPane();
 
-		BorderPane leftBotderPane = new BorderPane();
-		leftPane = new VBox();
-		ScrollPane scrollPane = new ScrollPane();
-		scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		root.setLeft(createLeftPane(stage));
+		root.setCenter(createRightPane(stage));
 
-		rightPane = new BorderPane();
-		ProgressIndicator progressIndicator = new ProgressIndicator();
-		rightPane.setCenter(progressIndicator);
+		selectFNode(null);
+		stage.getScene().setRoot(root);
+	}
 
-		scrollPane.setContent(rightPane);
+	private BorderPane createLeftPane(Stage stage)
+	{
+		BorderPane leftRootPane = new BorderPane();
+		leftRootPane.setStyle("-fx-border-color: gray");
+
+		controlPane = new VBox();
 
 		logoutButton = customButton(null, images.get("logout.png"));
 		logoutButton.setOnAction(event ->
@@ -266,17 +277,21 @@ public class FilesStage extends ViewStage
 			clientController.logout();
 		});
 
-		leftBotderPane.setTop(leftPane);
-		leftBotderPane.setBottom(logoutButton);
-		root.setLeft(leftBotderPane);
-		root.setCenter(scrollPane);
+		leftRootPane.setTop(controlPane);
+		leftRootPane.setBottom(logoutButton);
 
-		//buttons
-		leftPane.setPadding(new Insets(10));
-		leftPane.setSpacing(10);
+		createControlButtons(stage);
+
+		return leftRootPane;
+	}
+
+	private void createControlButtons(Stage stage)
+	{
+		//controlPane.setPadding(new Insets(10));
+		controlPane.setSpacing(10);
 
 		createFolderButton = customButton(null, images.get("createFolder.png"));
-		leftPane.getChildren().add(createFolderButton);
+		controlPane.getChildren().add(createFolderButton);
 		createFolderButton.setOnAction(event ->
 		{
 			TextInputDialog dialog = new TextInputDialog();
@@ -294,7 +309,7 @@ public class FilesStage extends ViewStage
 		});
 
 		addFileButton = customButton(null, images.get("addFile.png"));
-		leftPane.getChildren().add(addFileButton);
+		controlPane.getChildren().add(addFileButton);
 		addFileButton.setOnAction(event ->
 		{
 			//copy to client folder
@@ -306,7 +321,7 @@ public class FilesStage extends ViewStage
 		});
 
 		downloadButton = customButton(null, images.get("download.png"));
-		leftPane.getChildren().add(downloadButton);
+		controlPane.getChildren().add(downloadButton);
 		downloadButton.setOnAction(event ->
 		{
 			clientController.download(selectedFNode);
@@ -314,7 +329,7 @@ public class FilesStage extends ViewStage
 		});
 
 		uploadButton = customButton(null, images.get("upload.png"));
-		leftPane.getChildren().add(uploadButton);
+		controlPane.getChildren().add(uploadButton);
 		uploadButton.setOnAction(event ->
 		{
 			clientController.upload(selectedFNode);
@@ -322,7 +337,7 @@ public class FilesStage extends ViewStage
 		});
 
 		deleteClientButton = customButton(null, images.get("deleteClient.png"));
-		leftPane.getChildren().add(deleteClientButton);
+		controlPane.getChildren().add(deleteClientButton);
 		deleteClientButton.setOnAction(event ->
 		{
 			clientController.removeFileFromClient(selectedFNode);
@@ -330,15 +345,59 @@ public class FilesStage extends ViewStage
 		});
 
 		deleteServerButton = customButton(null, images.get("deleteServer.png"));
-		leftPane.getChildren().add(deleteServerButton);
+		controlPane.getChildren().add(deleteServerButton);
 		deleteServerButton.setOnAction(event ->
 		{
 			clientController.removeFileFromServer(selectedFNode);
 			selectFNode(null);
 		});
+	}
 
-		selectFNode(null);
-		stage.getScene().setRoot(root);
+	private BorderPane createRightPane(Stage stage)
+	{
+		rootRightPane = new BorderPane();
+		rootRightPane.setStyle("-fx-border-color: gray");
+
+		//vbox with progress and title
+		ProgressIndicator progressIndicator = new ProgressIndicator();
+		Text progressTitle = new Text("Loading files...");
+
+		VBox vBox = new VBox(10, progressIndicator, progressTitle);
+		vBox.setMaxSize(70, 100);
+
+		rootRightPane.setCenter(vBox);
+
+		createScrollPane();
+
+		return rootRightPane;
+	}
+
+	private void createScrollPane()
+	{
+		scrollFilesPane = new ScrollPane();
+		scrollFilesPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+		scrollFilesPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.ALWAYS);
+
+		scrollFilesPane.setOnDragOver(event ->
+		{
+			if (event.getGestureSource() != scrollFilesPane && event.getDragboard().hasFiles())
+				event.acceptTransferModes(TransferMode.COPY);
+
+			event.consume();
+		});
+		scrollFilesPane.setOnDragDropped(event ->
+		{
+			Dragboard dragboard = event.getDragboard();
+			boolean success = false;
+			if (dragboard.hasFiles())
+			{
+				for (File file : dragboard.getFiles())
+					clientController.copyFile(file, curFolder);
+				success = true;
+			}
+			event.setDropCompleted(success);
+			event.consume();
+		});
 	}
 
 	private Image loadImage(String fileName) throws IOException

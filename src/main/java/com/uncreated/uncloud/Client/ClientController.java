@@ -3,6 +3,7 @@ package com.uncreated.uncloud.Client;
 import com.uncreated.uncloud.Client.View.ClientView;
 import com.uncreated.uncloud.Common.FileStorage.*;
 import javafx.application.Platform;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -90,7 +91,10 @@ public class ClientController
 			{
 				File dest = new File(ROOT_FOLDER + login + curNode.getFilePath() + source.getName());
 				dest.getParentFile().mkdirs();
-				Files.copy(source.toPath(), dest.toPath());
+				if (source.isDirectory())
+					FileUtils.copyDirectory(source, dest);
+				else
+					Files.copy(source.toPath(), dest.toPath());
 				requestStatus = new RequestStatus(true);
 			} catch (IOException e)
 			{

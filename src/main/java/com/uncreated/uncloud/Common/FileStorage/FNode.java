@@ -2,7 +2,7 @@ package com.uncreated.uncloud.Common.FileStorage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public abstract class FNode
+public abstract class FNode implements Comparable<FNode>
 {
 	protected String name;
 
@@ -62,5 +62,11 @@ public abstract class FNode
 			parent = parent.getParentFolder();
 		}
 		return builder.toString();
+	}
+
+	@Override
+	public int compareTo(FNode o)
+	{
+		return name.toLowerCase().compareTo(o.name.toLowerCase());
 	}
 }

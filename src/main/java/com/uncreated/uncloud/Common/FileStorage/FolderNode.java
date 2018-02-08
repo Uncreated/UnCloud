@@ -3,6 +3,7 @@ package com.uncreated.uncloud.Common.FileStorage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class FolderNode extends FNode
 {
@@ -174,6 +175,13 @@ public class FolderNode extends FNode
 		return onlyAll;
 	}
 
+	public void sort()
+	{
+		if (folders.size() > 0)
+			Collections.sort(folders);
+		if (folders.size() > 0)
+			Collections.sort(files);
+	}
 
 	public boolean isFilesOnServer(boolean onlyAll)
 	{
