@@ -235,6 +235,7 @@ public class FilesStage
 				image = images.get("serverFolder.png");
 			}
 			ToggleButton button = customButton(folder.getName(), image);
+			button.setTooltip(makeTooltip(folder));
 			setButtonSelectEvent(button, folder);
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
@@ -255,6 +256,7 @@ public class FilesStage
 				image = images.get("serverFile.png");
 			}
 			ToggleButton button = customButton(file.getName(), image);
+			button.setTooltip(makeTooltip(file));
 			setButtonSelectEvent(button, file);
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
@@ -264,6 +266,43 @@ public class FilesStage
 
 		rootRightPane.getChildren().clear();
 		rootRightPane.setCenter(scrollFilesPane);
+	}
+
+	private Tooltip makeTooltip(FNode fNode)
+	{
+		StringBuilder builder = new StringBuilder();
+		builder.append("Name: ");
+		builder.append(fNode.getName());
+		builder.append('\n');
+		builder.append("Path: ");
+		if (fNode.getParentFolder() == null)
+		{
+			builder.append('/');
+		}
+		else
+		{
+			builder.append(fNode.getParentFolder().getFilePath());
+		}
+		builder.append('\n');
+
+		builder.append("Size: ");
+		builder.append(fNode.getSizeString());
+
+		builder.append('\n');
+		builder.append("Location: ");
+		if (fNode.isOnClient())
+		{
+			builder.append("client");
+		}
+		if (fNode.isOnClient() && fNode.isOnServer())
+		{
+			builder.append(", ");
+		}
+		if (fNode.isOnServer())
+		{
+			builder.append("server");
+		}
+		return new Tooltip(builder.toString());
 	}
 
 	private void setButtonSelectEvent(ToggleButton button, FNode fNode)

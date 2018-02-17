@@ -24,7 +24,8 @@ public class FileNode
 		this.size = size;
 	}
 
-	public Long getSize()
+	@Override
+	public long getSize()
 	{
 		return size;
 	}

@@ -2,6 +2,8 @@ package com.uncreated.uncloud.common.filestorage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import java.text.DecimalFormat;
+
 public abstract class FNode
 		implements Comparable<FNode>
 {
@@ -69,5 +71,19 @@ public abstract class FNode
 	public int compareTo(FNode o)
 	{
 		return name.toLowerCase().compareTo(o.name.toLowerCase());
+	}
+
+	public abstract long getSize();
+
+	public String getSizeString()
+	{
+		long size = getSize();
+		if (size <= 0)
+		{
+			return "0B";
+		}
+		final String[] units = new String[]{"B", "KB", "MB", "GB", "TB"};
+		int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+		return new DecimalFormat("#,##0.#").format(size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
 	}
 }

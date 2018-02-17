@@ -173,6 +173,21 @@ public class FolderNode
 	}
 
 	@Override
+	public long getSize()
+	{
+		long size = 0;
+		for (FileNode file : files)
+		{
+			size += file.getSize();
+		}
+		for (FolderNode folder : folders)
+		{
+			size += folder.getSize();
+		}
+		return size;
+	}
+
+	@Override
 	public String getFilePath()
 	{
 		StringBuilder builder = new StringBuilder("/");
