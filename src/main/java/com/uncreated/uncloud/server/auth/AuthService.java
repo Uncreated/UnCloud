@@ -1,6 +1,6 @@
-package com.uncreated.uncloud.Server.auth;
+package com.uncreated.uncloud.server.auth;
 
-import com.uncreated.uncloud.Server.RequestException;
+import com.uncreated.uncloud.common.RequestException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 
@@ -15,42 +15,6 @@ public class AuthService
 	private final UsersRepository usersRepository;
 	private HashMap<String, Session> sessions = new HashMap<>();
 
-	/*@Bean
-	public RedisConnectionFactory redisCF() {
-		JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();
-		jedisConnectionFactory.setHostName("5.187.1.87\n");
-		jedisConnectionFactory.setPort(6379);
-		jedisConnectionFactory.setPassword("NIXuU62JvuB00xzN2PgPtQVyglm9cQLN");
-		return jedisConnectionFactory;
-	}
-
-	@Bean
-	public RedisTemplate<String, User> redisTemplate() {
-		RedisTemplate<String, User> template = new RedisTemplate<>();
-		template.setConnectionFactory(redisCF());
-		return template;
-	}*/
-
-	/*@Bean
-	JedisConnectionFactory jedisConnectionFactory()
-	{
-		JedisConnectionFactory jedisConnectionFactory = new JedisConnectionFactory();
-
-		jedisConnectionFactory.setHostName("5.187.1.87");
-		jedisConnectionFactory.setPort(6379);
-		jedisConnectionFactory.setPassword("NIXuU62JvuB00xzN2PgPtQVyglm9cQLN");
-
-		return jedisConnectionFactory;
-	}
-
-	@Bean
-	public RedisTemplate<String, User> redisTemplate()
-	{
-		RedisTemplate<String, User> template = new RedisTemplate<>();
-		template.setConnectionFactory(jedisConnectionFactory());
-		return template;
-	}*/
-
 	public AuthService(UsersRepository usersRepository)
 	{
 		this.usersRepository = usersRepository;
@@ -62,7 +26,10 @@ public class AuthService
 	private String getLogin(String accessToken) throws RequestException
 	{
 		Session session = sessions.get(accessToken);
-		if (session != null) return session.getLogin();
+		if (session != null)
+		{
+			return session.getLogin();
+		}
 
 		throw new RequestException("Not authorized", HttpStatus.UNAUTHORIZED);
 	}
@@ -75,7 +42,9 @@ public class AuthService
 	private User getUser(String login)
 	{
 		if (usersRepository.exists(login))
+		{
 			return usersRepository.findOne(login);
+		}
 		return null;
 	}
 
@@ -83,7 +52,9 @@ public class AuthService
 	{
 		User user = getUser(newUser.getLogin());
 		if (user != null)
+		{
 			throw new RequestException("Login already exists");
+		}
 
 		usersRepository.save(newUser);
 	}
@@ -123,7 +94,9 @@ public class AuthService
 	{
 		StringBuilder builder = new StringBuilder(21);
 		for (int i = 0; i < 20; i++)
+		{
 			builder.append(ABC.charAt(rand.nextInt(26)));
+		}
 		return builder.toString();
 	}
 }

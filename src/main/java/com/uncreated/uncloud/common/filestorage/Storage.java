@@ -1,6 +1,7 @@
-package com.uncreated.uncloud.Common.FileStorage;
+package com.uncreated.uncloud.common.filestorage;
 
-import org.apache.tomcat.util.http.fileupload.FileUtils;
+
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,7 +20,9 @@ public class Storage
 	{
 		File userFolder = new File(rootFolder + login);
 		if (!userFolder.exists())
+		{
 			userFolder.mkdir();
+		}
 
 		return new FolderNode(userFolder);
 	}
@@ -28,7 +31,9 @@ public class Storage
 	{
 		File file = new File(rootFolder + login + filePath);
 		if (!file.exists())
+		{
 			throw new FileNotFoundException(filePath);
+		}
 
 		int size = FileTransfer.getSizeOfPart(file.length(), part);
 
@@ -42,14 +47,19 @@ public class Storage
 	{
 		File file = new File(rootFolder + login + filePath);
 		if (!file.exists())
+		{
 			throw new FileNotFoundException(filePath);
+		}
 
 		if (file.isDirectory())
 		{
 			FileUtils.deleteDirectory(file);
 			return true;
-		} else
+		}
+		else
+		{
 			return file.delete();
+		}
 	}
 
 	public void setFilePart(String login, FileTransfer fileTransfer) throws IOException
@@ -59,7 +69,9 @@ public class Storage
 		{
 			file.getParentFile().mkdirs();
 			if (!file.createNewFile())
+			{
 				throw new IOException("Can not create file " + file.getPath());
+			}
 		}
 
 		fileTransfer.write(file);
@@ -69,8 +81,12 @@ public class Storage
 	{
 		File file = new File(rootFolder + login + path);
 		if (!file.exists())
+		{
 			if (!file.mkdirs())
+			{
 				throw new IOException("Can not create folder " + path);
+			}
+		}
 	}
 
 }

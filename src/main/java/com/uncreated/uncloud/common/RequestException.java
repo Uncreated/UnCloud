@@ -1,8 +1,9 @@
-package com.uncreated.uncloud.Server;
+package com.uncreated.uncloud.common;
 
 import org.springframework.http.HttpStatus;
 
-public class RequestException extends Exception
+public class RequestException
+		extends Exception
 {
 	private ErrorMsg errorMsg;
 	private HttpStatus httpCode;
@@ -22,12 +23,12 @@ public class RequestException extends Exception
 		System.out.println("RequestException: CODE=" + httpCode + "\n" + errorMsg);
 	}
 
-	ErrorMsg getErrorMsg()
+	public ErrorMsg getErrorMsg()
 	{
 		return errorMsg;
 	}
 
-	HttpStatus getHttpCode()
+	public HttpStatus getHttpCode()
 	{
 		return httpCode;
 	}

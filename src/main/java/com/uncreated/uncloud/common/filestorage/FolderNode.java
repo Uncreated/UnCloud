@@ -1,11 +1,12 @@
-package com.uncreated.uncloud.Common.FileStorage;
+package com.uncreated.uncloud.common.filestorage;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-public class FolderNode extends FNode
+public class FolderNode
+		extends FNode
 {
 	private ArrayList<FolderNode> folders;
 	private ArrayList<FileNode> files;
@@ -26,17 +27,25 @@ public class FolderNode extends FNode
 		this(rootFolder.getName());
 
 		if (!rootFolder.exists() || !rootFolder.isDirectory())
+		{
 			throw new FileNotFoundException();
+		}
 
 		File[] subFiles = rootFolder.listFiles();
 		if (subFiles != null)
+		{
 			for (File file : subFiles)
 			{
 				if (file.isDirectory())
+				{
 					folders.add(new FolderNode(file));
+				}
 				else
+				{
 					files.add(new FileNode(file));
+				}
 			}
+		}
 	}
 
 	public FolderNode(FolderNode clientFiles, FolderNode serverFiles)//merged folder
@@ -60,8 +69,12 @@ public class FolderNode extends FNode
 		}
 
 		for (FileNode serverFile : serverFiles.files)
+		{
 			if (!serverFile.isOnClient())
+			{
 				files.add(serverFile);
+			}
+		}
 
 
 		for (FolderNode clientFolder : clientFiles.folders)
@@ -82,12 +95,18 @@ public class FolderNode extends FNode
 				}
 			}
 			if (!clientFolder.isOnServer())
+			{
 				folders.add(clientFolder);
+			}
 		}
 
 		for (FolderNode serverFolder : serverFiles.folders)
+		{
 			if (!serverFolder.isOnClient())
+			{
 				folders.add(serverFolder);
+			}
+		}
 
 		initRelations();
 	}
@@ -98,10 +117,14 @@ public class FolderNode extends FNode
 		super.setLoc(client, server);
 
 		for (FileNode fileNode : files)
+		{
 			fileNode.setLoc(client, server);
+		}
 
 		for (FolderNode folderNode : folders)
+		{
 			folderNode.setLoc(client, server);
+		}
 	}
 
 	public ArrayList<FolderNode> getFolders()
@@ -117,7 +140,9 @@ public class FolderNode extends FNode
 	private void initRelations()
 	{
 		for (FileNode fileNode : files)
+		{
 			fileNode.parentFolder = this;
+		}
 		for (FolderNode folderNode : folders)
 		{
 			folderNode.parentFolder = this;
@@ -128,15 +153,21 @@ public class FolderNode extends FNode
 	public FolderNode goTo(String path)
 	{
 		if (path.length() == 1)
+		{
 			return this;
+		}
 
 		String nextName = path.substring(1);
 		nextName = nextName.substring(0, nextName.indexOf('/'));
 		path = path.substring(nextName.length() + 1);
 
 		for (FolderNode folder : folders)
+		{
 			if (folder.getName().equals(nextName))
+			{
 				return folder.goTo(path);
+			}
+		}
 
 		return this;
 	}
@@ -159,17 +190,25 @@ public class FolderNode extends FNode
 	public boolean isFilesOnClient(boolean onlyAll)
 	{
 		if (isOnClient() != onlyAll)
+		{
 			return isOnClient();
+		}
 
 		for (FileNode fileNode : files)
+		{
 			if (fileNode.isOnClient() != onlyAll)
+			{
 				return fileNode.isOnClient();
+			}
+		}
 
 		for (FolderNode folderNode : folders)
 		{
 			boolean res = folderNode.isFilesOnClient(onlyAll);
 			if (res != onlyAll)
+			{
 				return res;
+			}
 		}
 
 		return onlyAll;
@@ -178,25 +217,37 @@ public class FolderNode extends FNode
 	public void sort()
 	{
 		if (folders.size() > 0)
+		{
 			Collections.sort(folders);
+		}
 		if (folders.size() > 0)
+		{
 			Collections.sort(files);
+		}
 	}
 
 	public boolean isFilesOnServer(boolean onlyAll)
 	{
 		if (isOnServer() != onlyAll)
+		{
 			return isOnServer();
+		}
 
 		for (FileNode fileNode : files)
+		{
 			if (fileNode.isOnServer() != onlyAll)
+			{
 				return fileNode.isOnServer();
+			}
+		}
 
 		for (FolderNode folderNode : folders)
 		{
 			boolean res = folderNode.isFilesOnServer(onlyAll);
 			if (res != onlyAll)
+			{
 				return res;
+			}
 		}
 
 		return onlyAll;

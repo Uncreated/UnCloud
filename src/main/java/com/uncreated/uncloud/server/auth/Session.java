@@ -1,4 +1,4 @@
-package com.uncreated.uncloud.Server.auth;
+package com.uncreated.uncloud.server.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 

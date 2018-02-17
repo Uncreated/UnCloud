@@ -1,12 +1,13 @@
-package com.uncreated.uncloud.Server;
+package com.uncreated.uncloud.server;
 
-import com.uncreated.uncloud.Common.FileStorage.FileTransfer;
-import com.uncreated.uncloud.Common.FileStorage.FolderNode;
-import com.uncreated.uncloud.Server.auth.AuthService;
-import com.uncreated.uncloud.Server.auth.Session;
-import com.uncreated.uncloud.Server.auth.User;
-import com.uncreated.uncloud.Server.auth.UsersRepository;
-import com.uncreated.uncloud.Server.storage.StorageService;
+import com.uncreated.uncloud.common.RequestException;
+import com.uncreated.uncloud.common.filestorage.FileTransfer;
+import com.uncreated.uncloud.common.filestorage.FolderNode;
+import com.uncreated.uncloud.server.auth.AuthService;
+import com.uncreated.uncloud.server.auth.Session;
+import com.uncreated.uncloud.server.auth.User;
+import com.uncreated.uncloud.server.auth.UsersRepository;
+import com.uncreated.uncloud.server.storage.StorageService;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +40,8 @@ public class ServerController
 		{
 			authService.register(httpEntity.getBody());
 			return ResponseEntity.status(HttpStatus.OK).body(null);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
 		}
@@ -53,7 +55,8 @@ public class ServerController
 			User user = httpEntity.getBody();
 			Session session = authService.login(user.getLogin(), user.getPasswordHash());
 			return ResponseEntity.status(HttpStatus.OK).body(session);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
 		}
@@ -67,7 +70,8 @@ public class ServerController
 			String login = authService.getLogin(httpEntity);
 			FolderNode folderNode = storageService.getFiles(login);
 			return ResponseEntity.status(HttpStatus.OK).body(folderNode);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			return ResponseEntity.status(e.getHttpCode()).body(e);
 		}
@@ -83,7 +87,8 @@ public class ServerController
 			String login = authService.getLogin(httpEntity);
 			FileTransfer fileTransfer = storageService.getFilePart(login, path, part);
 			return ResponseEntity.status(HttpStatus.OK).body(fileTransfer);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
 		}
@@ -98,7 +103,8 @@ public class ServerController
 			String login = authService.getLogin(httpEntity);
 			storageService.removeFile(login, path);
 			return ResponseEntity.status(HttpStatus.OK).body(null);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
 		}
@@ -112,7 +118,8 @@ public class ServerController
 			String login = authService.getLogin(httpEntity);
 			storageService.setFile(login, httpEntity.getBody());
 			return ResponseEntity.status(HttpStatus.OK).body(null);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
 		}
@@ -127,7 +134,8 @@ public class ServerController
 			String login = authService.getLogin(httpEntity);
 			storageService.createFolder(login, path);
 			return ResponseEntity.status(HttpStatus.OK).body(null);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
 		}

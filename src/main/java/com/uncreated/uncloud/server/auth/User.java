@@ -1,4 +1,4 @@
-package com.uncreated.uncloud.Server.auth;
+package com.uncreated.uncloud.server.auth;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -45,7 +45,8 @@ public class User
 			byte[] sha512a = sha512(passBytes);
 			byte[] sha512b = sha512(sha512a);
 			return sha512b;
-		} catch (NoSuchAlgorithmException | UnsupportedEncodingException e)
+		}
+		catch (NoSuchAlgorithmException | UnsupportedEncodingException e)
 		{
 			e.printStackTrace();
 			return null;

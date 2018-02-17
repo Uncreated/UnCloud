@@ -1,4 +1,4 @@
-package com.uncreated.uncloud.Client;
+package com.uncreated.uncloud.client;
 
 public class RequestStatus<T>
 {

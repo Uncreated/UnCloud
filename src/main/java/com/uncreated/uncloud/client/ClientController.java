@@ -1,8 +1,7 @@
-package com.uncreated.uncloud.Client;
+package com.uncreated.uncloud.client;
 
-import com.uncreated.uncloud.Client.View.ClientView;
-import com.uncreated.uncloud.Common.FileStorage.*;
-import javafx.application.Platform;
+import com.uncreated.uncloud.client.view.ClientView;
+import com.uncreated.uncloud.common.filestorage.*;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -12,8 +11,6 @@ import java.nio.file.Files;
 
 public class ClientController
 {
-	private static final String ROOT_FOLDER = "C:/UnCloud/Client/";
-
 	private Storage storage;
 
 	private RequestHandler requestHandler;
@@ -22,11 +19,18 @@ public class ClientController
 	private FolderNode mergedFolder;
 	private String login;
 
-	public ClientController(ClientView clientView)
+	private String rootFolder;
+
+	public ClientController(String rootFolder)
+	{
+		requestHandler = new RequestHandler();
+		storage = new Storage(rootFolder);
+		this.rootFolder = rootFolder;
+	}
+
+	public void setClientView(ClientView clientView)
 	{
 		this.clientView = clientView;
-		requestHandler = new RequestHandler();
-		storage = new Storage(ROOT_FOLDER);
 	}
 
 	private void runThread(Runnable r)
@@ -56,7 +60,8 @@ public class ClientController
 			{
 				FolderNode clientFolder = storage.getFiles(login);
 				mergedFolder = new FolderNode(clientFolder, serverFolder);
-			} catch (FileNotFoundException e)
+			}
+			catch (FileNotFoundException e)
 			{
 				requestStatus = new RequestStatus<>(false, "Local folder not found");
 			}
@@ -77,8 +82,16 @@ public class ClientController
 			if (requestStatus.isOk())
 			{
 				this.login = login;
-				folderUpdateRequestResult(requestStatus);
+				//folderUpdateRequestResult(requestStatus);
 			}
+		});
+	}
+
+	public void updateFiles()
+	{
+		runThread(() ->
+		{
+			folderUpdateRequestResult(new RequestStatus(true));
 		});
 	}
 
@@ -89,14 +102,19 @@ public class ClientController
 			RequestStatus requestStatus;
 			try
 			{
-				File dest = new File(ROOT_FOLDER + login + curNode.getFilePath() + source.getName());
+				File dest = new File(rootFolder + login + curNode.getFilePath() + source.getName());
 				dest.getParentFile().mkdirs();
 				if (source.isDirectory())
+				{
 					FileUtils.copyDirectory(source, dest);
+				}
 				else
-					Files.copy(source.toPath(), dest.toPath());
+				{
+					FileUtils.copyFile(source, dest);
+				}
 				requestStatus = new RequestStatus(true);
-			} catch (IOException e)
+			}
+			catch (IOException e)
 			{
 				e.printStackTrace();
 				requestStatus = new RequestStatus(false, e.getMessage());
@@ -117,9 +135,10 @@ public class ClientController
 			{
 				try
 				{
-					requestStatusPart.getData().write(ROOT_FOLDER + login);
+					requestStatusPart.getData().write(rootFolder + login);
 					continue;
-				} catch (IOException e)
+				}
+				catch (IOException e)
 				{
 					requestStatus = new RequestStatus(false, "Can not write file");
 					break;
@@ -136,12 +155,16 @@ public class ClientController
 	{
 		RequestStatus requestStatus = null;
 		if (!folderNode.isOnClient())
-			new File(ROOT_FOLDER + login + folderNode.getFilePath()).mkdirs();
+		{
+			new File(rootFolder + login + folderNode.getFilePath()).mkdirs();
+		}
 		for (FolderNode folder : folderNode.getFolders())
 		{
 			requestStatus = downloadFolder(folder);
 			if (!requestStatus.isOk())
+			{
 				return requestStatus;
+			}
 		}
 
 		for (FileNode fileNode : folderNode.getFiles())
@@ -150,7 +173,9 @@ public class ClientController
 			{
 				requestStatus = downloadFile(fileNode);
 				if (!requestStatus.isOk())
+				{
 					return requestStatus;
+				}
 			}
 		}
 
@@ -163,9 +188,13 @@ public class ClientController
 		{
 			RequestStatus requestStatus;
 			if (fNode instanceof FolderNode)
+			{
 				requestStatus = downloadFolder((FolderNode) fNode);
+			}
 			else
+			{
 				requestStatus = downloadFile((FileNode) fNode);
+			}
 
 			folderUpdateRequestResult(requestStatus);
 		});
@@ -177,7 +206,7 @@ public class ClientController
 
 		String path = fileNode.getFilePath();
 		int szi = fileNode.getParts();
-		File file = new File(ROOT_FOLDER + login + path);
+		File file = new File(rootFolder + login + path);
 		for (int i = 0; i < szi; i++)
 		{
 			FileTransfer fileTransfer = new FileTransfer(path, i, FileTransfer.getSizeOfPart(fileNode.getSize(), i));
@@ -191,7 +220,8 @@ public class ClientController
 					break;
 				}
 
-			} catch (IOException e)
+			}
+			catch (IOException e)
 			{
 				requestStatus = new RequestStatus(false, "Can not read file");
 				break;
@@ -205,12 +235,16 @@ public class ClientController
 		RequestStatus requestStatus = null;
 
 		if (!folderNode.isOnServer())
+		{
 			requestStatus = requestHandler.createFolder(folderNode.getFilePath());
+		}
 		for (FolderNode folder : folderNode.getFolders())
 		{
 			requestStatus = uploadFolder(folder);
 			if (!requestStatus.isOk())
+			{
 				return requestStatus;
+			}
 		}
 
 		for (FileNode fileNode : folderNode.getFiles())
@@ -219,7 +253,9 @@ public class ClientController
 			{
 				requestStatus = uploadFile(fileNode);
 				if (!requestStatus.isOk())
+				{
 					return requestStatus;
+				}
 			}
 		}
 
@@ -232,9 +268,13 @@ public class ClientController
 		{
 			RequestStatus requestStatus;
 			if (fNode instanceof FolderNode)
+			{
 				requestStatus = uploadFolder((FolderNode) fNode);
+			}
 			else
+			{
 				requestStatus = uploadFile((FileNode) fNode);
+			}
 
 			folderUpdateRequestResult(requestStatus);
 		});
@@ -247,7 +287,8 @@ public class ClientController
 		{
 			storage.removeFile(login, fNode.getFilePath());
 			requestStatus = new RequestStatus(true);
-		} catch (IOException e)
+		}
+		catch (IOException e)
 		{
 			e.printStackTrace();
 			requestStatus = new RequestStatus(false, e.getMessage());
@@ -274,27 +315,35 @@ public class ClientController
 	private void folderUpdateRequestResult(RequestStatus requestStatus)
 	{
 		if (requestStatus.isOk())
+		{
 			requestStatus = getMergedFolder();
+		}
 
 		RequestStatus reqStatus = requestStatus;
 		call(() ->
 		{
 			if (reqStatus.isOk())
+			{
 				clientView.onUpdateFiles(mergedFolder);
+			}
 			else
+			{
 				clientView.onFailRequest(reqStatus);
+			}
 		});
-	}
-
-	private void call(Runnable runnable)
-	{
-		if (clientView != null)
-			Platform.runLater(runnable);
 	}
 
 	public void logout()
 	{
 		this.clientView.onLogout();
 		this.clientView = null;
+	}
+
+	private void call(Runnable runnable)
+	{
+		if (clientView != null)
+		{
+			clientView.call(runnable);
+		}
 	}
 }

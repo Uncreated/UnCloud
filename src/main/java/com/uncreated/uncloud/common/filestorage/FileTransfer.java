@@ -1,4 +1,4 @@
-package com.uncreated.uncloud.Common.FileStorage;
+package com.uncreated.uncloud.common.filestorage;
 
 import java.io.File;
 import java.io.IOException;
@@ -68,7 +68,9 @@ public class FileTransfer
 	{
 		int parts = (int) (size / PART_SIZE);
 		if (size % PART_SIZE != 0)
+		{
 			parts++;
+		}
 		return parts;
 	}
 
@@ -76,7 +78,9 @@ public class FileTransfer
 	{
 		fileSize -= part * PART_SIZE;
 		if (fileSize > PART_SIZE)
+		{
 			fileSize = PART_SIZE;
+		}
 
 		return (int) fileSize;
 	}

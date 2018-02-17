@@ -1,9 +1,9 @@
-package com.uncreated.uncloud.Server.storage;
+package com.uncreated.uncloud.server.storage;
 
-import com.uncreated.uncloud.Common.FileStorage.FileTransfer;
-import com.uncreated.uncloud.Common.FileStorage.FolderNode;
-import com.uncreated.uncloud.Common.FileStorage.Storage;
-import com.uncreated.uncloud.Server.RequestException;
+import com.uncreated.uncloud.common.RequestException;
+import com.uncreated.uncloud.common.filestorage.FileTransfer;
+import com.uncreated.uncloud.common.filestorage.FolderNode;
+import com.uncreated.uncloud.common.filestorage.Storage;
 import org.springframework.http.HttpStatus;
 
 import java.io.FileNotFoundException;
@@ -25,7 +25,8 @@ public class StorageService
 		try
 		{
 			return storage.getFiles(login);
-		} catch (FileNotFoundException e)
+		}
+		catch (FileNotFoundException e)
 		{
 			throw new RequestException(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -36,10 +37,12 @@ public class StorageService
 		try
 		{
 			return storage.getFilePart(login, filePath, part);
-		} catch (FileNotFoundException e)
+		}
+		catch (FileNotFoundException e)
 		{
 			throw new RequestException("Incorrect filename(" + filePath + ")");
-		} catch (IOException e)
+		}
+		catch (IOException e)
 		{
 			throw new RequestException("Internal error", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -50,8 +53,11 @@ public class StorageService
 		try
 		{
 			if (!storage.removeFile(login, filePath))
+			{
 				throw new RequestException("Internal error. Can not to delete file.", HttpStatus.INTERNAL_SERVER_ERROR);
-		} catch (IOException e)
+			}
+		}
+		catch (IOException e)
 		{
 			throw new RequestException("File not found" + filePath);
 		}
@@ -62,7 +68,8 @@ public class StorageService
 		try
 		{
 			storage.setFilePart(login, fileTransfer);
-		} catch (IOException e)
+		}
+		catch (IOException e)
 		{
 			throw new RequestException("Internal error. " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}
@@ -73,7 +80,8 @@ public class StorageService
 		try
 		{
 			storage.createFolder(login, path);
-		} catch (IOException e)
+		}
+		catch (IOException e)
 		{
 			throw new RequestException("Internal error. " + e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
 		}

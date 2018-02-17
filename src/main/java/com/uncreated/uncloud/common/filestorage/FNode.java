@@ -1,8 +1,9 @@
-package com.uncreated.uncloud.Common.FileStorage;
+package com.uncreated.uncloud.common.filestorage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
-public abstract class FNode implements Comparable<FNode>
+public abstract class FNode
+		implements Comparable<FNode>
 {
 	protected String name;
 

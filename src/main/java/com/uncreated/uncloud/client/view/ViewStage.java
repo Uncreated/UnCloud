@@ -1,13 +1,15 @@
-package com.uncreated.uncloud.Client.View;
+package com.uncreated.uncloud.client.view;
 
-import com.uncreated.uncloud.Client.ClientController;
-import com.uncreated.uncloud.Client.RequestStatus;
-import com.uncreated.uncloud.Common.FileStorage.FolderNode;
+import com.uncreated.uncloud.client.ClientController;
+import com.uncreated.uncloud.client.RequestStatus;
+import com.uncreated.uncloud.common.filestorage.FolderNode;
+import javafx.application.Platform;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.stage.Stage;
 
-public abstract class ViewStage implements ClientView
+public abstract class ViewStage
+		implements ClientView
 {
 	protected ClientController clientController;
 
@@ -16,7 +18,10 @@ public abstract class ViewStage implements ClientView
 		this.clientController = clientController;
 	}
 
-	public abstract void onStart(Stage stage);
+	public void onStart(Stage stage)
+	{
+		clientController.setClientView(this);
+	}
 
 	protected static void news(boolean good, String message)
 	{
@@ -55,5 +60,9 @@ public abstract class ViewStage implements ClientView
 
 	}
 
-
+	@Override
+	public void call(Runnable runnable)
+	{
+		Platform.runLater(runnable);
+	}
 }

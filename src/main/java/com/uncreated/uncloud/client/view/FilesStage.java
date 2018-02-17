@@ -1,10 +1,11 @@
-package com.uncreated.uncloud.Client.View;
+package com.uncreated.uncloud.client.view;
 
-import com.uncreated.uncloud.Client.ClientController;
-import com.uncreated.uncloud.Client.RequestStatus;
-import com.uncreated.uncloud.Common.FileStorage.FNode;
-import com.uncreated.uncloud.Common.FileStorage.FileNode;
-import com.uncreated.uncloud.Common.FileStorage.FolderNode;
+import com.uncreated.uncloud.client.ClientApp;
+import com.uncreated.uncloud.client.ClientController;
+import com.uncreated.uncloud.client.RequestStatus;
+import com.uncreated.uncloud.common.filestorage.FNode;
+import com.uncreated.uncloud.common.filestorage.FileNode;
+import com.uncreated.uncloud.common.filestorage.FolderNode;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Pos;
@@ -29,10 +30,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Optional;
 
-public class FilesStage extends ViewStage
+public class FilesStage
+		extends ViewStage
 {
 	private static final String ICON_FOLDER = "src/main/resources/icons/";
 	private static final String[] ICONS = {
@@ -72,7 +73,7 @@ public class FilesStage extends ViewStage
 	private FolderNode curFolder;
 	private ToggleButton selectedButton;
 
-	FilesStage(ClientController clientController)
+	public FilesStage(ClientController clientController)
 	{
 		super(clientController);
 
@@ -80,8 +81,11 @@ public class FilesStage extends ViewStage
 		try
 		{
 			for (String fileName : ICONS)
+			{
 				images.put(fileName, loadImage(fileName));
-		} catch (IOException e)
+			}
+		}
+		catch (IOException e)
 		{
 			e.printStackTrace();
 			news(false, "Can not to read interface components. " + e.getMessage());
@@ -104,14 +108,18 @@ public class FilesStage extends ViewStage
 				event ->
 				{
 					if (selectedButton == null || selectedButton != button)
+					{
 						button.setEffect(grayShadow);
+					}
 				});
 
 		button.addEventHandler(MouseEvent.MOUSE_EXITED,
 				event ->
 				{
 					if (selectedButton == null || selectedButton != button)
+					{
 						button.setEffect(null);
+					}
 				});
 		return button;
 	}
@@ -126,27 +134,44 @@ public class FilesStage extends ViewStage
 			if (fNode instanceof FileNode)
 			{
 				if (!fNode.isOnClient())
+				{
 					controlPane.getChildren().add(downloadButton);
+				}
 				if (!fNode.isOnServer())
+				{
 					controlPane.getChildren().add(uploadButton);
+				}
 
 				if (fNode.isOnClient())
+				{
 					controlPane.getChildren().add(deleteClientButton);
+				}
 				if (fNode.isOnServer())
+				{
 					controlPane.getChildren().add(deleteServerButton);
-			} else if (fNode instanceof FolderNode)
+				}
+			}
+			else if (fNode instanceof FolderNode)
 			{
 				FolderNode folderNode = (FolderNode) fNode;
 				if (!folderNode.isFilesOnClient(true))
+				{
 					controlPane.getChildren().add(downloadButton);
+				}
 
 				if (!folderNode.isFilesOnServer(true))
+				{
 					controlPane.getChildren().add(uploadButton);
+				}
 
 				if (folderNode.isFilesOnClient(false))
+				{
 					controlPane.getChildren().add(deleteClientButton);
+				}
 				if (folderNode.isFilesOnServer(false))
+				{
 					controlPane.getChildren().add(deleteServerButton);
+				}
 			}
 		}
 	}
@@ -167,11 +192,15 @@ public class FilesStage extends ViewStage
 			backButton.setOnMouseClicked(event ->
 			{
 				if (selectedButton != null && selectedButton == backButton)
+				{
 					showFolder(folderNode.getParentFolder());
+				}
 				else
 				{
 					if (selectedButton != null)
+					{
 						selectedButton.setEffect(null);
+					}
 
 					selectFNode(null);
 					backButton.setEffect(blueShadow);
@@ -184,11 +213,17 @@ public class FilesStage extends ViewStage
 		{
 			Image image = images.get("folder.png");
 			if (folder.isOnClient() && folder.isOnServer())
+			{
 				image = images.get("clientServerFolder.png");
+			}
 			else if (folder.isOnClient())
+			{
 				image = images.get("clientFolder.png");
+			}
 			else if (folder.isOnServer())
+			{
 				image = images.get("serverFolder.png");
+			}
 			ToggleButton button = customButton(folder.getName(), image);
 			setButtonSelectEvent(button, folder);
 			filesPane.setAlignment(Pos.CENTER_LEFT);
@@ -198,11 +233,17 @@ public class FilesStage extends ViewStage
 		{
 			Image image = images.get("file.png");
 			if (file.isOnClient() && file.isOnServer())
+			{
 				image = images.get("clientServerFile.png");
+			}
 			else if (file.isOnClient())
+			{
 				image = images.get("clientFile.png");
+			}
 			else if (file.isOnServer())
+			{
 				image = images.get("serverFile.png");
+			}
 			ToggleButton button = customButton(file.getName(), image);
 			setButtonSelectEvent(button, file);
 			filesPane.setAlignment(Pos.CENTER_LEFT);
@@ -222,12 +263,17 @@ public class FilesStage extends ViewStage
 			if (selectedFNode == fNode)
 			{
 				if (fNode instanceof FolderNode)
+				{
 					showFolder((FolderNode) fNode);
-			} else
+				}
+			}
+			else
 			{
 				selectFNode(fNode);
 				if (selectedButton != null)
+				{
 					selectedButton.setEffect(null);
+				}
 
 				button.setEffect(blueShadow);
 				selectedButton = button;
@@ -240,7 +286,9 @@ public class FilesStage extends ViewStage
 	{
 		String savedPath = "";
 		if (curFolder != null)
+		{
 			savedPath += curFolder.getFilePath();
+		}
 		savedPath += "/";
 
 		showFolder(mergedFiles.goTo(savedPath));
@@ -255,6 +303,7 @@ public class FilesStage extends ViewStage
 	@Override
 	public void onStart(Stage stage)
 	{
+		super.onStart(stage);
 		BorderPane root = new BorderPane();
 
 		root.setLeft(createLeftPane(stage));
@@ -262,6 +311,8 @@ public class FilesStage extends ViewStage
 
 		selectFNode(null);
 		stage.getScene().setRoot(root);
+
+		clientController.updateFiles();
 	}
 
 	private BorderPane createLeftPane(Stage stage)
@@ -275,6 +326,7 @@ public class FilesStage extends ViewStage
 		logoutButton.setOnAction(event ->
 		{
 			clientController.logout();
+			ClientApp.getInstance().reload();
 		});
 
 		leftRootPane.setTop(controlPane);
@@ -287,7 +339,6 @@ public class FilesStage extends ViewStage
 
 	private void createControlButtons(Stage stage)
 	{
-		//controlPane.setPadding(new Insets(10));
 		controlPane.setSpacing(10);
 
 		createFolderButton = customButton(null, images.get("createFolder.png"));
@@ -317,7 +368,9 @@ public class FilesStage extends ViewStage
 			fileChooser.setTitle("Select file for upload to server");
 			File file = fileChooser.showOpenDialog(stage);
 			if (file != null)
+			{
 				clientController.copyFile(file, curFolder);
+			}
 		});
 
 		downloadButton = customButton(null, images.get("download.png"));
@@ -381,7 +434,9 @@ public class FilesStage extends ViewStage
 		scrollFilesPane.setOnDragOver(event ->
 		{
 			if (event.getGestureSource() != scrollFilesPane && event.getDragboard().hasFiles())
+			{
 				event.acceptTransferModes(TransferMode.COPY);
+			}
 
 			event.consume();
 		});
@@ -392,7 +447,9 @@ public class FilesStage extends ViewStage
 			if (dragboard.hasFiles())
 			{
 				for (File file : dragboard.getFiles())
+				{
 					clientController.copyFile(file, curFolder);
+				}
 				success = true;
 			}
 			event.setDropCompleted(success);

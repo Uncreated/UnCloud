@@ -1,11 +1,11 @@
-package com.uncreated.uncloud.Client;
+package com.uncreated.uncloud.client;
 
-import com.uncreated.uncloud.Common.FileStorage.FNode;
-import com.uncreated.uncloud.Common.FileStorage.FileTransfer;
-import com.uncreated.uncloud.Common.FileStorage.FolderNode;
-import com.uncreated.uncloud.Server.RequestException;
-import com.uncreated.uncloud.Server.auth.Session;
-import com.uncreated.uncloud.Server.auth.User;
+import com.uncreated.uncloud.common.RequestException;
+import com.uncreated.uncloud.common.filestorage.FNode;
+import com.uncreated.uncloud.common.filestorage.FileTransfer;
+import com.uncreated.uncloud.common.filestorage.FolderNode;
+import com.uncreated.uncloud.server.auth.Session;
+import com.uncreated.uncloud.server.auth.User;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,7 +24,7 @@ import java.util.ArrayList;
 class RequestHandler
 {
 	private static final int TRY_COUNT = 3;
-	private static final String API_URL = "http://localhost:8080/api/";
+	private static final String API_URL = "http://192.168.1.43:8080/api/";
 	private static final RestTemplate restTemplate = new RestTemplate();
 
 	private Session session;
@@ -36,7 +36,8 @@ class RequestHandler
 		{
 			request.go(new User(login, password), String.class);
 			return new RequestStatus(true);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			e.printStackTrace();
 			return new RequestStatus(false, e.getMessage());
@@ -50,7 +51,8 @@ class RequestHandler
 		{
 			session = request.go(new User(login, password), Session.class);
 			return new RequestStatus(true);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			e.printStackTrace();
 			return new RequestStatus(false, e.getMessage());
@@ -65,7 +67,8 @@ class RequestHandler
 		{
 			FolderNode folderNode = request.go(FolderNode.class);
 			return new RequestStatus<FolderNode>(true).setData(folderNode);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			e.printStackTrace();
 			return new RequestStatus<FolderNode>(false, e.getMessage());
@@ -81,7 +84,8 @@ class RequestHandler
 		{
 			FileTransfer fileTransfer = request.go(FileTransfer.class);
 			return new RequestStatus<FileTransfer>(true).setData(fileTransfer);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			e.printStackTrace();
 			return new RequestStatus<FileTransfer>(false, e.getMessage());
@@ -96,7 +100,8 @@ class RequestHandler
 		{
 			request.go(String.class);
 			return new RequestStatus<>(true);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			e.printStackTrace();
 			return new RequestStatus<>(false, e.getMessage());
@@ -110,7 +115,8 @@ class RequestHandler
 		{
 			request.go(fileTransfer, String.class);
 			return new RequestStatus(true);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			e.printStackTrace();
 			return new RequestStatus(false, e.getMessage());
@@ -125,7 +131,8 @@ class RequestHandler
 		{
 			request.go(FNode.class);
 			return new RequestStatus(true);
-		} catch (RequestException e)
+		}
+		catch (RequestException e)
 		{
 			e.printStackTrace();
 			return new RequestStatus(false, e.getMessage());
@@ -156,11 +163,14 @@ class RequestHandler
 				try
 				{
 					return goTry(req, tClass);
-				} catch (RequestException e)
+				}
+				catch (RequestException e)
 				{
 					e.printStackTrace();
 					if (i == TRY_COUNT - 1)
+					{
 						throw e;
+					}
 				}
 			}
 			return null;
@@ -175,17 +185,21 @@ class RequestHandler
 				MediaType mediaType = new MediaType("application", "json", StandardCharsets.UTF_8);
 				httpHeaders.setContentType(mediaType);
 				if (session != null)
+				{
 					httpHeaders.set("Authorization", session.getAccessToken());
+				}
 
 				HttpEntity<REQ> entity = new HttpEntity<>(req, httpHeaders);
 				try
 				{
 					return restTemplate.exchange(getUrl(), method, entity, tClass).getBody();
-				} catch (HttpClientErrorException e)
+				}
+				catch (HttpClientErrorException e)
 				{
 					throw new RequestException(e.getStatusText(), e.getStatusCode());
 				}
-			} catch (ResourceAccessException e)
+			}
+			catch (ResourceAccessException e)
 			{
 				throw new RequestException("Connection timed out", null);
 			}
@@ -215,8 +229,11 @@ class RequestHandler
 						builder.append("=");
 						builder.append(value);
 						if (i != szi - 1)
+						{
 							builder.append("&");
-					} catch (UnsupportedEncodingException e)
+						}
+					}
+					catch (UnsupportedEncodingException e)
 					{
 						e.printStackTrace();
 					}
@@ -225,7 +242,8 @@ class RequestHandler
 			try
 			{
 				return new URI(builder.toString());
-			} catch (URISyntaxException e)
+			}
+			catch (URISyntaxException e)
 			{
 				e.printStackTrace();
 				return null;

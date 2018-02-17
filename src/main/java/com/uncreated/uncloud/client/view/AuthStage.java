@@ -1,7 +1,8 @@
-package com.uncreated.uncloud.Client.View;
+package com.uncreated.uncloud.client.view;
 
-import com.uncreated.uncloud.Client.ClientController;
-import com.uncreated.uncloud.Client.RequestStatus;
+import com.uncreated.uncloud.client.ClientApp;
+import com.uncreated.uncloud.client.ClientController;
+import com.uncreated.uncloud.client.RequestStatus;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -16,7 +17,8 @@ import javafx.stage.Stage;
 
 import java.util.prefs.Preferences;
 
-public class AuthStage extends ViewStage
+public class AuthStage
+		extends ViewStage
 {
 	private static final String PREF_REMEMBER = "prefKeyRemember";
 	private static final String PREF_LOGIN = "prefKeyLogin";
@@ -33,7 +35,7 @@ public class AuthStage extends ViewStage
 	private boolean autoAuth = false;
 
 
-	AuthStage(ClientController clientController)
+	public AuthStage(ClientController clientController)
 	{
 		super(clientController);
 	}
@@ -41,6 +43,7 @@ public class AuthStage extends ViewStage
 	@Override
 	public void onStart(Stage stage)
 	{
+		super.onStart(stage);
 		preferences = Preferences.userNodeForPackage(AuthStage.class);
 
 		Text loginText = new Text("Login:");
@@ -57,7 +60,13 @@ public class AuthStage extends ViewStage
 
 		checkBox = new CheckBox("Remember me");
 
-		VBox vBox = new VBox(loginText, loginTextField, passwordText, passwordTextField, hBox, checkBox, progressIndicator);
+		VBox vBox = new VBox(loginText,
+				loginTextField,
+				passwordText,
+				passwordTextField,
+				hBox,
+				checkBox,
+				progressIndicator);
 		vBox.setMaxWidth(250);
 		vBox.setFillWidth(false);
 		vBox.setSpacing(10);
@@ -88,13 +97,20 @@ public class AuthStage extends ViewStage
 			passwordTextField.setText(password);
 
 			if (autoAuth)
+			{
+				autoAuth = false;
 				authButton.fire();
+			}
 		}
 
 		if (stage.getScene() != null)
+		{
 			stage.getScene().setRoot(root);
+		}
 		else
+		{
 			stage.setScene(new Scene(root, 1, 1));
+		}
 		stage.setMinHeight(540);
 		stage.setMinWidth(960);
 		stage.centerOnScreen();
@@ -121,6 +137,11 @@ public class AuthStage extends ViewStage
 			preferences.putBoolean(PREF_REMEMBER, checkBox.isSelected());
 			preferences.put(PREF_LOGIN, checkBox.isSelected() ? loginTextField.getText() : "");
 			preferences.put(PREF_PASSWORD, checkBox.isSelected() ? passwordTextField.getText() : "");
+			ClientApp.getInstance().openFilesStage();
+		}
+		else
+		{
+			news(false, requestStatus.getMsg());
 		}
 	}
 
@@ -138,9 +159,13 @@ public class AuthStage extends ViewStage
 	{
 		setLoading(false);
 		if (!requestStatus.isOk())
+		{
 			news(false, requestStatus.getMsg());
+		}
 		else
+		{
 			news(true, "You have successfully registered");
+		}
 	}
 
 	private void onAuthClick(TextField loginTextField, TextField passwordTextField, boolean auth)
@@ -151,10 +176,17 @@ public class AuthStage extends ViewStage
 		if (login.length() > 0 && password.length() > 0)
 		{
 			if (auth)
+			{
 				clientController.auth(login, password);
+			}
 			else
+			{
 				clientController.register(login, password);
-		} else
+			}
+		}
+		else
+		{
 			news(false, "Incorrect login or password");
+		}
 	}
 }

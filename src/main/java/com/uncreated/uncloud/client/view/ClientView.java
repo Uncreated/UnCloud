@@ -1,7 +1,7 @@
-package com.uncreated.uncloud.Client.View;
+package com.uncreated.uncloud.client.view;
 
-import com.uncreated.uncloud.Client.RequestStatus;
-import com.uncreated.uncloud.Common.FileStorage.FolderNode;
+import com.uncreated.uncloud.client.RequestStatus;
+import com.uncreated.uncloud.common.filestorage.FolderNode;
 
 public interface ClientView
 {
@@ -14,4 +14,6 @@ public interface ClientView
 	void onFailRequest(RequestStatus requestStatus);
 
 	void onLogout();
+
+	void call(Runnable runnable);
 }

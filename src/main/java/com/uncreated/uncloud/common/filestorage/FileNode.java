@@ -1,10 +1,11 @@
-package com.uncreated.uncloud.Common.FileStorage;
+package com.uncreated.uncloud.common.filestorage;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.File;
 
-public class FileNode extends FNode
+public class FileNode
+		extends FNode
 {
 	private Long size;
 
