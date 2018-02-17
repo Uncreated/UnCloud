@@ -9,14 +9,12 @@ import com.uncreated.uncloud.common.filestorage.FolderNode;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Pos;
-import javafx.scene.control.ProgressIndicator;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextInputDialog;
-import javafx.scene.control.ToggleButton;
+import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
@@ -55,6 +53,7 @@ public class FilesStage
 	private static DropShadow grayShadow = new DropShadow(20, Color.GRAY);
 	private static DropShadow blueShadow = new DropShadow(20, Color.BLUE);
 
+	private BorderPane root;
 	private VBox controlPane;
 	private BorderPane rootRightPane;
 	private ScrollPane scrollFilesPane;
@@ -182,6 +181,17 @@ public class FilesStage
 		selectFNode(null);
 		VBox filesPane = new VBox();
 
+		if (root.getOnKeyPressed() == null)
+		{
+			root.setOnKeyPressed(event ->
+			{
+				System.out.println(event.getCode().toString());
+				if (event.getCode() == KeyCode.F5)
+				{
+					clientController.updateFiles();
+				}
+			});
+		}
 		//filesPane.setPadding(new Insets(10, 0, 10, 10));
 		filesPane.setSpacing(10);
 		folderNode.sort();
@@ -304,7 +314,7 @@ public class FilesStage
 	public void onStart(Stage stage)
 	{
 		super.onStart(stage);
-		BorderPane root = new BorderPane();
+		root = new BorderPane();
 
 		root.setLeft(createLeftPane(stage));
 		root.setCenter(createRightPane(stage));
@@ -323,6 +333,7 @@ public class FilesStage
 		controlPane = new VBox();
 
 		logoutButton = customButton(null, images.get("logout.png"));
+		logoutButton.setTooltip(new Tooltip("Logout"));
 		logoutButton.setOnAction(event ->
 		{
 			clientController.logout();
@@ -342,6 +353,7 @@ public class FilesStage
 		controlPane.setSpacing(10);
 
 		createFolderButton = customButton(null, images.get("createFolder.png"));
+		createFolderButton.setTooltip(new Tooltip("Create folder on server"));
 		controlPane.getChildren().add(createFolderButton);
 		createFolderButton.setOnAction(event ->
 		{
@@ -360,6 +372,7 @@ public class FilesStage
 		});
 
 		addFileButton = customButton(null, images.get("addFile.png"));
+		addFileButton.setTooltip(new Tooltip("Add file on client"));
 		controlPane.getChildren().add(addFileButton);
 		addFileButton.setOnAction(event ->
 		{
@@ -374,6 +387,7 @@ public class FilesStage
 		});
 
 		downloadButton = customButton(null, images.get("download.png"));
+		downloadButton.setTooltip(new Tooltip("Download"));
 		controlPane.getChildren().add(downloadButton);
 		downloadButton.setOnAction(event ->
 		{
@@ -382,6 +396,7 @@ public class FilesStage
 		});
 
 		uploadButton = customButton(null, images.get("upload.png"));
+		uploadButton.setTooltip(new Tooltip("Upload"));
 		controlPane.getChildren().add(uploadButton);
 		uploadButton.setOnAction(event ->
 		{
@@ -390,6 +405,7 @@ public class FilesStage
 		});
 
 		deleteClientButton = customButton(null, images.get("deleteClient.png"));
+		deleteClientButton.setTooltip(new Tooltip("Delete from client"));
 		controlPane.getChildren().add(deleteClientButton);
 		deleteClientButton.setOnAction(event ->
 		{
@@ -398,6 +414,7 @@ public class FilesStage
 		});
 
 		deleteServerButton = customButton(null, images.get("deleteServer.png"));
+		deleteServerButton.setTooltip(new Tooltip("Delete from server"));
 		controlPane.getChildren().add(deleteServerButton);
 		deleteServerButton.setOnAction(event ->
 		{
