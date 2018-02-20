@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 @RestController
 @RequestMapping("/api")
@@ -48,12 +49,26 @@ public class ServerController
 	}
 
 	@RequestMapping(value = "/auth", method = POST, consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
-	public ResponseEntity auth(HttpEntity<User> httpEntity)
+	public ResponseEntity authPost(HttpEntity<User> httpEntity)
 	{
 		try
 		{
 			User user = httpEntity.getBody();
-			Session session = authService.login(user.getLogin(), user.getPasswordHash());
+			Session session = authService.auth(user.getLogin(), user.getPasswordHash());
+			return ResponseEntity.status(HttpStatus.OK).body(session);
+		}
+		catch (RequestException e)
+		{
+			return ResponseEntity.status(e.getHttpCode()).body(e.getErrorMsg());
+		}
+	}
+
+	@RequestMapping(value = "/auth", method = PUT, produces = APPLICATION_JSON_VALUE)
+	public ResponseEntity authPut(HttpEntity<User> httpEntity)
+	{
+		try
+		{
+			Session session = authService.update(httpEntity);
 			return ResponseEntity.status(HttpStatus.OK).body(session);
 		}
 		catch (RequestException e)

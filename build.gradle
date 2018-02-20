@@ -14,8 +14,20 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
 
+springBoot {
+    mainClass 'com.uncreated.uncloud.server.ServerApp'
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDirs = ['src/main/resources']
+        }
+    }
+}
+
 group = 'com.uncreated'
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0'
 sourceCompatibility = 1.8
 
 repositories {
@@ -25,10 +37,9 @@ repositories {
 dependencies {
     implementation 'commons-io:commons-io:1.3.2'
 
-    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
     runtime('com.h2database:h2')
-} repositories {
-    maven {
-        url 'https://repo.spring.io/libs-release'
-    }
+    runtime('org.springframework.boot:spring-boot-devtools')
 }

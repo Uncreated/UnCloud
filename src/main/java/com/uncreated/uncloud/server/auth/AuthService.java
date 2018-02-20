@@ -36,7 +36,27 @@ public class AuthService
 
 	public String getLogin(HttpEntity<?> httpEntity) throws RequestException
 	{
-		return getLogin(httpEntity.getHeaders().getFirst("Authorization"));
+		return getLogin(getAccessToken(httpEntity));
+	}
+
+	public Session update(HttpEntity<?> httpEntity) throws RequestException
+	{
+		Session session = sessions.get(getAccessToken(httpEntity));
+		if (session != null && !session.isExpired())
+		{
+			sessions.remove(session);
+			session = generateAccessToken(session.getLogin());
+			sessions.put(session.getAccessToken(), session);
+			return session;
+		}
+		throw new RequestException("Token expired", HttpStatus.UNAUTHORIZED);
+	}
+
+	private String getAccessToken(HttpEntity<?> httpEntity)
+	{
+		String accessToken = httpEntity.getHeaders().getFirst("Authorization");
+		System.out.println("Request: AccessToken=(" + accessToken + ")");
+		return accessToken;
 	}
 
 	private User getUser(String login)
@@ -59,7 +79,7 @@ public class AuthService
 		usersRepository.save(newUser);
 	}
 
-	public Session login(String login, byte[] passwordHash) throws RequestException
+	public Session auth(String login, byte[] passwordHash) throws RequestException
 	{
 		User user = getUser(login);
 		if (user != null)
@@ -74,7 +94,7 @@ public class AuthService
 			throw new RequestException("Incorrect password");
 		}
 
-		throw new RequestException("Incorrect login");
+		throw new RequestException("Incorrect auth");
 	}
 
 	private Session generateAccessToken(String login)
@@ -87,6 +107,7 @@ public class AuthService
 		}
 		while (sessions.containsKey(accessToken));
 
+		System.out.println("Response: AccessToken=(" + accessToken + ")");
 		return new Session(accessToken, login);
 	}
 
