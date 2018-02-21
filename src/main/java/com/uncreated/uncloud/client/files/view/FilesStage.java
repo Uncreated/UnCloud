@@ -1,11 +1,9 @@
-package com.uncreated.uncloud.client.view;
+package com.uncreated.uncloud.client.files.view;
 
 import com.uncreated.uncloud.client.ClientApp;
-import com.uncreated.uncloud.client.ClientController;
-import com.uncreated.uncloud.client.RequestStatus;
-import com.uncreated.uncloud.common.filestorage.FNode;
-import com.uncreated.uncloud.common.filestorage.FileNode;
-import com.uncreated.uncloud.common.filestorage.FolderNode;
+import com.uncreated.uncloud.client.StageView;
+import com.uncreated.uncloud.client.files.FileInfo;
+import com.uncreated.uncloud.client.files.FilesController;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Pos;
@@ -27,27 +25,30 @@ import javafx.stage.Stage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Optional;
 
 public class FilesStage
-		extends ViewStage
+		extends StageView<FilesController>
+		implements FilesView
 {
 	private static final String ICON_FOLDER = "src/main/resources/icons/";
 	private static final String[] ICONS = {
-			"createFolder.png",
-			"addFile.png",
+			"client_file.png",
+			"server_file.png",
+			"client_server_file.png",
+			"server_folder.png",
+			"client_server_folder.png",
+			"client_folder.png",
+			"create_folder.png",
+			"back_folder.png",
+			"add_file.png",
 			"download.png",
 			"upload.png",
-			"deleteClient.png",
-			"deleteServer.png",
-			"backFolder.png",
-			"clientFile.png",
-			"clientFolder.png",
-			"serverFile.png",
-			"serverFolder.png",
-			"clientServerFile.png",
-			"clientServerFolder.png",
+			"delete_client.png",
+			"delete_server.png",
 			"logout.png"};
 
 	private static DropShadow grayShadow = new DropShadow(20, Color.GRAY);
@@ -68,14 +69,15 @@ public class FilesStage
 
 	private HashMap<String, Image> images;
 
-	private FNode selectedFNode;
-	private FolderNode curFolder;
+	private FileInfo selectedFile;
+	private ArrayList<FileInfo> files;
 	private ToggleButton selectedButton;
 
-	public FilesStage(ClientController clientController)
+	public FilesStage(ClientApp app)
 	{
-		super(clientController);
+		super(app);
 
+		setController(app.getFilesController());
 		images = new HashMap<>();
 		try
 		{
@@ -87,7 +89,7 @@ public class FilesStage
 		catch (IOException e)
 		{
 			e.printStackTrace();
-			news(false, "Can not to read interface components. " + e.getMessage());
+			news("Can not to read interface components. " + e.getMessage());
 			Platform.exit();
 		}
 	}
@@ -123,62 +125,11 @@ public class FilesStage
 		return button;
 	}
 
-	private void selectFNode(FNode fNode)
+	@Override
+	public void showFolder(ArrayList<FileInfo> files, boolean rootFolder)
 	{
-		selectedFNode = fNode;
-		controlPane.getChildren().clear();
-		controlPane.getChildren().addAll(createFolderButton, addFileButton);
-		if (fNode != null)
-		{
-			if (fNode instanceof FileNode)
-			{
-				if (!fNode.isOnClient())
-				{
-					controlPane.getChildren().add(downloadButton);
-				}
-				if (!fNode.isOnServer())
-				{
-					controlPane.getChildren().add(uploadButton);
-				}
-
-				if (fNode.isOnClient())
-				{
-					controlPane.getChildren().add(deleteClientButton);
-				}
-				if (fNode.isOnServer())
-				{
-					controlPane.getChildren().add(deleteServerButton);
-				}
-			}
-			else if (fNode instanceof FolderNode)
-			{
-				FolderNode folderNode = (FolderNode) fNode;
-				if (!folderNode.isFilesOnClient(true))
-				{
-					controlPane.getChildren().add(downloadButton);
-				}
-
-				if (!folderNode.isFilesOnServer(true))
-				{
-					controlPane.getChildren().add(uploadButton);
-				}
-
-				if (folderNode.isFilesOnClient(false))
-				{
-					controlPane.getChildren().add(deleteClientButton);
-				}
-				if (folderNode.isFilesOnServer(false))
-				{
-					controlPane.getChildren().add(deleteServerButton);
-				}
-			}
-		}
-	}
-
-	private void showFolder(FolderNode folderNode)
-	{
-		curFolder = folderNode;
-		selectFNode(null);
+		//hide progressbar
+		selectFile(null);
 		VBox filesPane = new VBox();
 
 		if (root.getOnKeyPressed() == null)
@@ -188,22 +139,21 @@ public class FilesStage
 				System.out.println(event.getCode().toString());
 				if (event.getCode() == KeyCode.F5)
 				{
-					clientController.updateFiles();
+					controller.updateFiles();
 				}
 			});
 		}
-		//filesPane.setPadding(new Insets(10, 0, 10, 10));
+
 		filesPane.setSpacing(10);
-		folderNode.sort();
-		if (folderNode.getParentFolder() != null)
+		if (!rootFolder)
 		{
-			ToggleButton backButton = customButton(folderNode.getName(), images.get("backFolder.png"));
+			ToggleButton backButton = customButton("..", images.get("back_folder.png"));
 			backButton.setAlignment(Pos.TOP_LEFT);
 			backButton.setOnMouseClicked(event ->
 			{
 				if (selectedButton != null && selectedButton == backButton)
 				{
-					showFolder(folderNode.getParentFolder());
+					controller.openFolder(null);
 				}
 				else
 				{
@@ -212,51 +162,27 @@ public class FilesStage
 						selectedButton.setEffect(null);
 					}
 
-					selectFNode(null);
+					selectFile(null);
 					backButton.setEffect(blueShadow);
 					selectedButton = backButton;
 				}
 			});
 			filesPane.getChildren().add(backButton);
 		}
-		for (FolderNode folder : folderNode.getFolders())
+		for (FileInfo file : files)
 		{
-			Image image = images.get("folder.png");
-			if (folder.isOnClient() && folder.isOnServer())
+			StringBuilder img = new StringBuilder();
+			if (file.isDownloaded())
 			{
-				image = images.get("clientServerFolder.png");
+				img.append("client_");
 			}
-			else if (folder.isOnClient())
+			if (file.isUploaded())
 			{
-				image = images.get("clientFolder.png");
+				img.append("server_");
 			}
-			else if (folder.isOnServer())
-			{
-				image = images.get("serverFolder.png");
-			}
-			ToggleButton button = customButton(folder.getName(), image);
-			button.setTooltip(makeTooltip(folder));
-			setButtonSelectEvent(button, folder);
-			filesPane.setAlignment(Pos.CENTER_LEFT);
-			filesPane.getChildren().add(button);
-		}
-		for (FileNode file : folderNode.getFiles())
-		{
-			Image image = images.get("file.png");
-			if (file.isOnClient() && file.isOnServer())
-			{
-				image = images.get("clientServerFile.png");
-			}
-			else if (file.isOnClient())
-			{
-				image = images.get("clientFile.png");
-			}
-			else if (file.isOnServer())
-			{
-				image = images.get("serverFile.png");
-			}
-			ToggleButton button = customButton(file.getName(), image);
-			button.setTooltip(makeTooltip(file));
+			img.append(file.isDirectory() ? "folder.png" : "file.png");
+			ToggleButton button = customButton(file.getName(), images.get(img.toString()));
+			button.setTooltip(new Tooltip(file.getInfo()));
 			setButtonSelectEvent(button, file);
 			filesPane.setAlignment(Pos.CENTER_LEFT);
 			filesPane.getChildren().add(button);
@@ -268,57 +194,65 @@ public class FilesStage
 		rootRightPane.setCenter(scrollFilesPane);
 	}
 
-	private Tooltip makeTooltip(FNode fNode)
+	@Override
+	public void onFailRequest(String message)
 	{
-		StringBuilder builder = new StringBuilder();
-		builder.append("Name: ");
-		builder.append(fNode.getName());
-		builder.append('\n');
-		builder.append("Path: ");
-		if (fNode.getParentFolder() == null)
-		{
-			builder.append('/');
-		}
-		else
-		{
-			builder.append(fNode.getParentFolder().getFilePath());
-		}
-		builder.append('\n');
-
-		builder.append("Size: ");
-		builder.append(fNode.getSizeString());
-
-		builder.append('\n');
-		builder.append("Location: ");
-		if (fNode.isOnClient())
-		{
-			builder.append("client");
-		}
-		if (fNode.isOnClient() && fNode.isOnServer())
-		{
-			builder.append(", ");
-		}
-		if (fNode.isOnServer())
-		{
-			builder.append("server");
-		}
-		return new Tooltip(builder.toString());
+		//hide progress bar
+		news(message);
 	}
 
-	private void setButtonSelectEvent(ToggleButton button, FNode fNode)
+	@Override
+	public void onProgress(int value, int max, String unit)
+	{
+		//set progress bar
+		if (value == 0)//show
+		{
+
+		}
+	}
+
+	private void selectFile(FileInfo fileInfo)
+	{
+		selectedFile = fileInfo;
+		controlPane.getChildren().clear();
+		controlPane.getChildren().addAll(createFolderButton, addFileButton);
+		if (fileInfo != null)
+		{
+			if (fileInfo.isDownloadAny())
+			{
+				controlPane.getChildren().add(downloadButton);
+			}
+
+			if (fileInfo.isUploadAny())
+			{
+				controlPane.getChildren().add(uploadButton);
+			}
+
+			if (fileInfo.isDeleteAnyClient())
+			{
+				controlPane.getChildren().add(deleteClientButton);
+			}
+			if (fileInfo.isDeleteAnyServer())
+			{
+				controlPane.getChildren().add(deleteServerButton);
+			}
+		}
+	}
+
+	private void setButtonSelectEvent(ToggleButton button, FileInfo file)
 	{
 		button.setOnMouseClicked(event ->
 		{
-			if (selectedFNode == fNode)
+			if (selectedFile == file)
 			{
-				if (fNode instanceof FolderNode)
+				if (file.isDirectory())
 				{
-					showFolder((FolderNode) fNode);
+					controller.openFolder(file);
 				}
 			}
 			else
 			{
-				selectFNode(fNode);
+				selectFile(file);
 				if (selectedButton != null)
 				{
 					selectedButton.setEffect(null);
@@ -331,25 +265,6 @@ public class FilesStage
 	}
 
 	@Override
-	public void onUpdateFiles(FolderNode mergedFiles)
-	{
-		String savedPath = "";
-		if (curFolder != null)
-		{
-			savedPath += curFolder.getFilePath();
-		}
-		savedPath += "/";
-
-		showFolder(mergedFiles.goTo(savedPath));
-	}
-
-	@Override
-	public void onFailRequest(RequestStatus requestStatus)
-	{
-		news(false, requestStatus.getMsg());
-	}
-
-	@Override
 	public void onStart(Stage stage)
 	{
 		super.onStart(stage);
@@ -358,10 +273,10 @@ public class FilesStage
 		root.setLeft(createLeftPane(stage));
 		root.setCenter(createRightPane(stage));
 
-		selectFNode(null);
+		selectFile(null);
 		stage.getScene().setRoot(root);
 
-		clientController.updateFiles();
+		controller.updateFiles();
 	}
 
 	private BorderPane createLeftPane(Stage stage)
@@ -375,8 +290,7 @@ public class FilesStage
 		logoutButton.setTooltip(new Tooltip("Logout"));
 		logoutButton.setOnAction(event ->
 		{
-			clientController.logout();
-			ClientApp.getInstance().reload();
+			app.openAuthStage();
 		});
 
 		leftRootPane.setTop(controlPane);
@@ -391,7 +305,7 @@ public class FilesStage
 	{
 		controlPane.setSpacing(10);
 
-		createFolderButton = customButton(null, images.get("createFolder.png"));
+		createFolderButton = customButton(null, images.get("create_folder.png"));
 		createFolderButton.setTooltip(new Tooltip("Create folder on server"));
 		controlPane.getChildren().add(createFolderButton);
 		createFolderButton.setOnAction(event ->
@@ -405,24 +319,20 @@ public class FilesStage
 				String name = result.get();
 				if (name.length() > 0)
 				{
-					clientController.createFolder(name, curFolder);
+					controller.createFolder(name);
 				}
 			}
 		});
 
-		addFileButton = customButton(null, images.get("addFile.png"));
+		addFileButton = customButton(null, images.get("add_file.png"));
 		addFileButton.setTooltip(new Tooltip("Add file on client"));
 		controlPane.getChildren().add(addFileButton);
 		addFileButton.setOnAction(event ->
 		{
-			//copy to client folder
 			FileChooser fileChooser = new FileChooser();
 			fileChooser.setTitle("Select file for upload to server");
-			File file = fileChooser.showOpenDialog(stage);
-			if (file != null)
-			{
-				clientController.copyFile(file, curFolder);
-			}
+			List<File> files = fileChooser.showOpenMultipleDialog(stage);
+			controller.copyFile(files);
 		});
 
 		downloadButton = customButton(null, images.get("download.png"));
@@ -430,8 +340,8 @@ public class FilesStage
 		controlPane.getChildren().add(downloadButton);
 		downloadButton.setOnAction(event ->
 		{
-			clientController.download(selectedFNode);
-			selectFNode(null);
+			controller.download(selectedFile);
+			selectFile(null);
 		});
 
 		uploadButton = customButton(null, images.get("upload.png"));
@@ -439,26 +349,26 @@ public class FilesStage
 		controlPane.getChildren().add(uploadButton);
 		uploadButton.setOnAction(event ->
 		{
-			clientController.upload(selectedFNode);
-			selectFNode(null);
+			controller.upload(selectedFile);
+			selectFile(null);
 		});
 
-		deleteClientButton = customButton(null, images.get("deleteClient.png"));
+		deleteClientButton = customButton(null, images.get("delete_client.png"));
 		deleteClientButton.setTooltip(new Tooltip("Delete from client"));
 		controlPane.getChildren().add(deleteClientButton);
 		deleteClientButton.setOnAction(event ->
 		{
-			clientController.removeFileFromClient(selectedFNode);
-			selectFNode(null);
+			controller.removeFileFromClient(selectedFile);
+			selectFile(null);
 		});
 
-		deleteServerButton = customButton(null, images.get("deleteServer.png"));
+		deleteServerButton = customButton(null, images.get("delete_server.png"));
 		deleteServerButton.setTooltip(new Tooltip("Delete from server"));
 		controlPane.getChildren().add(deleteServerButton);
 		deleteServerButton.setOnAction(event ->
 		{
-			clientController.removeFileFromServer(selectedFNode);
-			selectFNode(null);
+			controller.removeFileFromServer(selectedFile);
+			selectFile(null);
 		});
 	}
 
@@ -504,7 +414,7 @@ public class FilesStage
 			{
 				for (File file : dragboard.getFiles())
 				{
-					clientController.copyFile(file, curFolder);
+					controller.copyFile(file);
 				}
 				success = true;
 			}

@@ -40,6 +40,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
+    implementation 'com.google.code.gson:gson:2.7'
+
     runtime('com.h2database:h2')
     runtime('org.springframework.boot:spring-boot-devtools')
 }

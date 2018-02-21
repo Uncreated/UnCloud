@@ -36,6 +36,11 @@ public class FileTransfer
 
 	public void write(File file) throws IOException
 	{
+		File parent = file.getParentFile();
+		if (!parent.exists())
+		{
+			parent.mkdirs();
+		}
 		RandomAccessFile randomAccessFile = new RandomAccessFile(file, "rw");
 		randomAccessFile.seek((long) part * (long) PART_SIZE);
 		randomAccessFile.write(data);

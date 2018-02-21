@@ -1,4 +1,4 @@
-package com.uncreated.uncloud.client;
+package com.uncreated.uncloud.client.requests;
 
 public class RequestStatus<T>
 {
@@ -6,24 +6,24 @@ public class RequestStatus<T>
 	private String msg;
 	private T data;
 
-	RequestStatus(boolean ok, String msg)
+	public RequestStatus(boolean ok, String msg)
 	{
 		this.ok = ok;
 		this.msg = msg;
 	}
 
-	T getData()
+	public T getData()
 	{
 		return data;
 	}
 
-	RequestStatus<T> setData(T data)
+	public RequestStatus<T> setData(T data)
 	{
 		this.data = data;
 		return this;
 	}
 
-	RequestStatus(boolean ok)
+	public RequestStatus(boolean ok)
 	{
 		this(ok, "");
 	}

@@ -94,7 +94,7 @@ public class AuthService
 			throw new RequestException("Incorrect password");
 		}
 
-		throw new RequestException("Incorrect auth");
+		throw new RequestException("Incorrect login");
 	}
 
 	private Session generateAccessToken(String login)

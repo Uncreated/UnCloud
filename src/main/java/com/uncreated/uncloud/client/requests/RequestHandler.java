@@ -1,7 +1,7 @@
-package com.uncreated.uncloud.client;
+package com.uncreated.uncloud.client.requests;
 
 import com.uncreated.uncloud.common.RequestException;
-import com.uncreated.uncloud.common.filestorage.FNode;
+import com.uncreated.uncloud.common.filestorage.FileNode;
 import com.uncreated.uncloud.common.filestorage.FileTransfer;
 import com.uncreated.uncloud.common.filestorage.FolderNode;
 import com.uncreated.uncloud.server.auth.Session;
@@ -21,15 +21,15 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
-class RequestHandler
+public class RequestHandler
 {
 	private static final int TRY_COUNT = 3;
-	private static final String API_URL = "http://192.168.1.43:8080/api/";
+	private static final String API_URL = "http://localhost:8080/api/";
 	private static final RestTemplate restTemplate = new RestTemplate();
 
-	private Session session;
+	private String accessToken;
 
-	RequestStatus register(String login, String password)
+	public RequestStatus register(String login, String password)
 	{
 		Request request = new Request("register", HttpMethod.POST);
 		try
@@ -44,23 +44,39 @@ class RequestHandler
 		}
 	}
 
-	RequestStatus auth(String login, String password)
+	public RequestStatus<String> auth(User user)
 	{
 		Request request = new Request("auth", HttpMethod.POST);
 		try
 		{
-			session = request.go(new User(login, password), Session.class);
-			return new RequestStatus(true);
+			accessToken = request.go(user, Session.class).getAccessToken();
+			return new RequestStatus<String>(true).setData(accessToken);
 		}
 		catch (RequestException e)
 		{
 			e.printStackTrace();
-			return new RequestStatus(false, e.getMessage());
+			return new RequestStatus<>(false, e.getMessage());
 		}
-
 	}
 
-	RequestStatus<FolderNode> files()
+	public RequestStatus<String> auth(String accessToken)
+	{
+		Request request = new Request("auth", HttpMethod.PUT);
+		try
+		{
+			this.accessToken = accessToken;
+			this.accessToken = request.go(Session.class).getAccessToken();
+			return new RequestStatus<String>(true).setData(this.accessToken);
+		}
+		catch (RequestException e)
+		{
+			e.printStackTrace();
+			this.accessToken = null;
+			return new RequestStatus<>(false, e.getMessage());
+		}
+	}
+
+	public RequestStatus<FolderNode> files()
 	{
 		Request request = new Request("files", HttpMethod.GET);
 		try
@@ -75,7 +91,7 @@ class RequestHandler
 		}
 	}
 
-	RequestStatus<FileTransfer> downloadFilePart(String path, Integer part)
+	public RequestStatus<FileTransfer> downloadFilePart(String path, Integer part)
 	{
 		Request request = new Request("file", HttpMethod.GET);
 		request.add("part", part.toString());
@@ -92,7 +108,7 @@ class RequestHandler
 		}
 	}
 
-	RequestStatus<FNode> removeFile(String path)
+	public RequestStatus<FileNode> removeFile(String path)
 	{
 		Request request = new Request("file", HttpMethod.DELETE);
 		request.add("path", path);
@@ -108,7 +124,7 @@ class RequestHandler
 		}
 	}
 
-	RequestStatus setFile(FileTransfer fileTransfer)
+	public RequestStatus setFile(FileTransfer fileTransfer)
 	{
 		Request request = new Request("file", HttpMethod.POST);
 		try
@@ -123,13 +139,13 @@ class RequestHandler
 		}
 	}
 
-	RequestStatus createFolder(String path)
+	public RequestStatus createFolder(String path)
 	{
 		Request request = new Request("folder", HttpMethod.POST);
 		request.add("path", path);
 		try
 		{
-			request.go(FNode.class);
+			request.go(FileNode.class);
 			return new RequestStatus(true);
 		}
 		catch (RequestException e)
@@ -184,9 +200,9 @@ class RequestHandler
 
 				MediaType mediaType = new MediaType("application", "json", StandardCharsets.UTF_8);
 				httpHeaders.setContentType(mediaType);
-				if (session != null)
+				if (accessToken != null)
 				{
-					httpHeaders.set("Authorization", session.getAccessToken());
+					httpHeaders.set("Authorization", accessToken);
 				}
 
 				HttpEntity<REQ> entity = new HttpEntity<>(req, httpHeaders);
